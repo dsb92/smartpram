@@ -1,0 +1,119 @@
+--------------- Build Started: 12/19/2013 21:52:23 Project: PSoC_pram_controller, Configuration: DP8051 Keil 9.51 Debug ---------------
+cydsfit.exe "-.appdatapath" "C:\Users\J.C.Joachim\AppData\Local\Cypress Semiconductor\PSoC Creator\3.0" "-.fdsnotice" "-.fdswarpdepfile=warp_dependencies.txt" "-.fdselabdepfile=elab_dependencies.txt" "-.fdsbldfile=generated_files.txt" "-p" "C:\Users\J.C.Joachim\Desktop\Gruppe 8\Implementering\Software\PSoC\PSoC_pram_controller.cydsn\PSoC_pram_controller.cyprj" "-d" "CY8C3866AXI-040" "-s" "C:\Users\J.C.Joachim\Desktop\Gruppe 8\Implementering\Software\PSoC\PSoC_pram_controller.cydsn\Generated_Source\PSoC3" "--" "-yv2" "-v3" "-ygs" "-q10" "-o2" "-.fftcfgtype=BE"
+Elaborating Design...
+HDL Generation ...
+Synthesis ...
+Place and Route ...
+Tech mapping ...
+ADD: pft.M0040: information: The following 1 pin(s) will be assigned a location by the fitter: DAC_out(0)
+Info: mpr.M0037: Unused pieces of the design have been optimized out. See the Tech mapping section of the report file for details. (App=cydsfit)
+Analog Placement ...
+Log: apr.M0058: The analog placement iterative improvement is 41% done. (App=cydsfit)
+Log: apr.M0058: The analog placement iterative improvement is 98% done. (App=cydsfit)
+Analog Routing ...
+Analog Code Generation ...
+Digital Placement ...
+Info: plm.M0038: The pin named DAC_out(0) at location P0[0] prevents usage of special purposes: OpAmp:out. (App=cydsfit)
+Info: plm.M0038: The pin named Signal_in(0) at location P0[1] prevents usage of special purposes: OpAmp:out. (App=cydsfit)
+Info: plm.M0039: The pin named V_Ref(0) at location P0[7] prevents usage of the high current (2mA) feature of an IDAC. (App=cydsfit)
+Digital Routing ...
+Bitstream Generation ...
+Static timing analysis ...
+API Generation ...
+Dependency Generation ...
+Clean Temporary Files ...
+c51.exe .\main.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\main.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\main.obj)
+c51.exe .\Functions.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Functions.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Functions.obj)
+c51.exe .\zigbee_driver.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\zigbee_driver.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\zigbee_driver.obj)
+c51.exe .\zigbee_SPI_PSoC3.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.obj)
+c51.exe .\Generated_Source\PSoC3\cyfitter_cfg.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\cyfitter_cfg.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\cyfitter_cfg.obj)
+c51.exe .\Generated_Source\PSoC3\Signal_in.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Signal_in.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Signal_in.obj)
+c51.exe .\Generated_Source\PSoC3\DAC_out.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\DAC_out.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\DAC_out.obj)
+c51.exe .\Generated_Source\PSoC3\Clock_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Clock_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Clock_1.obj)
+Ax51.exe .\Generated_Source\PSoC3\CyBootAsmKeil.a51 NOCO MACRO DB PR(.\DP8051\DP8051_Keil_951\Debug/CyBootAsmKeil.lst) CASE EP "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\CyBootAsmKeil.obj)
+c51.exe .\Generated_Source\PSoC3\CyDmac.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\CyDmac.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\CyDmac.obj)
+c51.exe .\Generated_Source\PSoC3\CyFlash.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\CyFlash.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\CyFlash.obj)
+c51.exe .\Generated_Source\PSoC3\CyLib.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\CyLib.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\CyLib.obj)
+Ax51.exe .\Generated_Source\PSoC3\cymem.a51 NOCO MACRO DB PR(.\DP8051\DP8051_Keil_951\Debug/cymem.lst) CASE EP "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\cymem.obj)
+c51.exe .\Generated_Source\PSoC3\cyPm.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\cyPm.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\cyPm.obj)
+c51.exe .\Generated_Source\PSoC3\CySpc.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\CySpc.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\CySpc.obj)
+c51.exe .\Generated_Source\PSoC3\cyutils.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\cyutils.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\cyutils.obj)
+Ax51.exe .\Generated_Source\PSoC3\KeilStart.a51 NOCO MACRO DB PR(.\DP8051\DP8051_Keil_951\Debug/KeilStart.lst) CASE EP "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\KeilStart.obj)
+c51.exe .\Generated_Source\PSoC3\ADC_DelSig_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1.obj)
+c51.exe .\Generated_Source\PSoC3\ADC_DelSig_1_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_PM.obj)
+c51.exe .\Generated_Source\PSoC3\ADC_DelSig_1_INT.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_INT.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_INT.obj)
+c51.exe .\Generated_Source\PSoC3\DMA_1_dma.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\DMA_1_dma.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\DMA_1_dma.obj)
+c51.exe .\Generated_Source\PSoC3\VDAC8_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\VDAC8_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\VDAC8_1.obj)
+c51.exe .\Generated_Source\PSoC3\VDAC8_1_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\VDAC8_1_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\VDAC8_1_PM.obj)
+c51.exe .\Generated_Source\PSoC3\ADC_DelSig_1_theACLK.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_theACLK.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_theACLK.obj)
+c51.exe .\Generated_Source\PSoC3\ADC_DelSig_1_Ext_CP_Clk.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_Ext_CP_Clk.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_Ext_CP_Clk.obj)
+c51.exe .\Generated_Source\PSoC3\Filter_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1.obj)
+c51.exe .\Generated_Source\PSoC3\Filter_1_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1_PM.obj)
+c51.exe .\Generated_Source\PSoC3\Filter_1_PVT.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.obj)
+c51.exe .\Generated_Source\PSoC3\Filter_1_RAM_Data.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1_RAM_Data.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1_RAM_Data.obj)
+c51.exe .\Generated_Source\PSoC3\Filter_1_Coefficients.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1_Coefficients.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1_Coefficients.obj)
+c51.exe .\Generated_Source\PSoC3\DMA_2_dma.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\DMA_2_dma.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\DMA_2_dma.obj)
+c51.exe .\Generated_Source\PSoC3\Clock_2.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Clock_2.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Clock_2.obj)
+c51.exe .\Generated_Source\PSoC3\Control_Reg_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Control_Reg_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Control_Reg_1.obj)
+c51.exe .\Generated_Source\PSoC3\isr_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\isr_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\isr_1.obj)
+c51.exe .\Generated_Source\PSoC3\isr_2.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\isr_2.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\isr_2.obj)
+c51.exe .\Generated_Source\PSoC3\Opamp_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Opamp_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Opamp_1.obj)
+c51.exe .\Generated_Source\PSoC3\Opamp_1_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Opamp_1_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Opamp_1_PM.obj)
+c51.exe .\Generated_Source\PSoC3\V_Ref.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\V_Ref.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\V_Ref.obj)
+c51.exe .\Generated_Source\PSoC3\PGA_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\PGA_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\PGA_1.obj)
+c51.exe .\Generated_Source\PSoC3\PGA_1_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\PGA_1_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\PGA_1_PM.obj)
+c51.exe .\Generated_Source\PSoC3\ADC_DelSig_1_IRQ.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_IRQ.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_IRQ.obj)
+c51.exe .\Generated_Source\PSoC3\PWM_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\PWM_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\PWM_1.obj)
+c51.exe .\Generated_Source\PSoC3\PWM_1_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\PWM_1_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\PWM_1_PM.obj)
+c51.exe .\Generated_Source\PSoC3\Mobile_motor.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Mobile_motor.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Mobile_motor.obj)
+c51.exe .\Generated_Source\PSoC3\Cradle_motor.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Cradle_motor.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Cradle_motor.obj)
+c51.exe .\Generated_Source\PSoC3\AMux_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\AMux_1.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\AMux_1.obj)
+c51.exe .\Generated_Source\PSoC3\Temp_in.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Temp_in.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Temp_in.obj)
+c51.exe .\Generated_Source\PSoC3\IRQ_Zigbee.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\IRQ_Zigbee.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\IRQ_Zigbee.obj)
+c51.exe .\Generated_Source\PSoC3\MISO.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\MISO.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\MISO.obj)
+c51.exe .\Generated_Source\PSoC3\nRESET.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\nRESET.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\nRESET.obj)
+c51.exe .\Generated_Source\PSoC3\WAKE.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\WAKE.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\WAKE.obj)
+c51.exe .\Generated_Source\PSoC3\CS.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\CS.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\CS.obj)
+c51.exe .\Generated_Source\PSoC3\SCLK.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\SCLK.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\SCLK.obj)
+c51.exe .\Generated_Source\PSoC3\MOSI.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\MOSI.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\MOSI.obj)
+c51.exe .\Generated_Source\PSoC3\SPI.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\SPI.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\SPI.obj)
+c51.exe .\Generated_Source\PSoC3\SPI_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\SPI_PM.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\SPI_PM.obj)
+c51.exe .\Generated_Source\PSoC3\SPI_INT.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\SPI_INT.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\SPI_INT.obj)
+c51.exe .\Generated_Source\PSoC3\isr_Receive_Data.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\isr_Receive_Data.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\isr_Receive_Data.obj)
+LIBX51.exe TRANSFER '.\DP8051\DP8051_Keil_951\Debug\cyfitter_cfg.obj', '.\DP8051\DP8051_Keil_951\Debug\Signal_in.obj', '.\DP8051\DP8051_Keil_951\Debug\DAC_out.obj', '.\DP8051\DP8051_Keil_951\Debug\Clock_1.obj', '.\DP8051\DP8051_Keil_951\Debug\CyBootAsmKeil.obj', '.\DP8051\DP8051_Keil_951\Debug\CyDmac.obj', '.\DP8051\DP8051_Keil_951\Debug\CyFlash.obj', '.\DP8051\DP8051_Keil_951\Debug\CyLib.obj', '.\DP8051\DP8051_Keil_951\Debug\cymem.obj', '.\DP8051\DP8051_Keil_951\Debug\cyPm.obj', '.\DP8051\DP8051_Keil_951\Debug\CySpc.obj', '.\DP8051\DP8051_Keil_951\Debug\cyutils.obj', '.\DP8051\DP8051_Keil_951\Debug\KeilStart.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_INT.obj', '.\DP8051\DP8051_Keil_951\Debug\DMA_1_dma.obj', '.\DP8051\DP8051_Keil_951\Debug\VDAC8_1.obj', '.\DP8051\DP8051_Keil_951\Debug\VDAC8_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_theACLK.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_Ext_CP_Clk.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_RAM_Data.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_Coefficients.obj', '.\DP8051\DP8051_Keil_951\Debug\DMA_2_dma.obj', '.\DP8051\DP8051_Keil_951\Debug\Clock_2.obj', '.\DP8051\DP8051_Keil_951\Debug\Control_Reg_1.obj', '.\DP8051\DP8051_Keil_951\Debug\isr_1.obj', '.\DP8051\DP8051_Keil_951\Debug\isr_2.obj', '.\DP8051\DP8051_Keil_951\Debug\Opamp_1.obj', '.\DP8051\DP8051_Keil_951\Debug\Opamp_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\V_Ref.obj', '.\DP8051\DP8051_Keil_951\Debug\PGA_1.obj', '.\DP8051\DP8051_Keil_951\Debug\PGA_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_IRQ.obj', '.\DP8051\DP8051_Keil_951\Debug\PWM_1.obj', '.\DP8051\DP8051_Keil_951\Debug\PWM_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\Mobile_motor.obj', '.\DP8051\DP8051_Keil_951\Debug\Cradle_motor.obj', '.\DP8051\DP8051_Keil_951\Debug\AMux_1.obj', '.\DP8051\DP8051_Keil_951\Debug\Temp_in.obj', '.\DP8051\DP8051_Keil_951\Debug\IRQ_Zigbee.obj', '.\DP8051\DP8051_Keil_951\Debug\MISO.obj', '.\DP8051\DP8051_Keil_951\Debug\nRESET.obj', '.\DP8051\DP8051_Keil_951\Debug\WAKE.obj', '.\DP8051\DP8051_Keil_951\Debug\CS.obj', '.\DP8051\DP8051_Keil_951\Debug\SCLK.obj', '.\DP8051\DP8051_Keil_951\Debug\MOSI.obj', '.\DP8051\DP8051_Keil_951\Debug\SPI.obj', '.\DP8051\DP8051_Keil_951\Debug\SPI_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\SPI_INT.obj', '.\DP8051\DP8051_Keil_951\Debug\isr_Receive_Data.obj' TO '.\DP8051\DP8051_Keil_951\Debug\PSoC_pram_controller.lib'
+LX51.exe '.\DP8051\DP8051_Keil_951\Debug\main.obj', '.\DP8051\DP8051_Keil_951\Debug\Functions.obj', '.\DP8051\DP8051_Keil_951\Debug\zigbee_driver.obj', '.\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.obj', '.\DP8051\DP8051_Keil_951\Debug\PSoC_pram_controller.lib', 'C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\DP8051\DP8051_Keil_951\Debug\CyComponentLibrary.lib'  TO '.\DP8051\DP8051_Keil_951\Debug\PSoC_pram_controller.omf' PR(.\DP8051\DP8051_Keil_951\Debug\PSoC_pram_controller.map) IX CODE DW(16) RU CL(XDATA(X:0x0000-X:0x1FFF)) CL(CODE(C:0x0000-C:0xFFFF)) CL(CONST(C:0x0000-C:0xFFFF))
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _PWM_1_WRITECOMPARE1/PWM_1
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _PWM_1_WRITECOMPARE2/PWM_1
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    SPI_READTXSTATUS/SPI
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _ZIGBEE_SHORT_WRITE/ZIGBEE_SPI_PSOC3
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _SPI_WRITETXDATA/SPI
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _ZIGBEE_SHORT_READ/ZIGBEE_SPI_PSOC3
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    SPI_READRXDATA/SPI
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+Program Size: data=24.0 xdata=302 const=1683 code=14691
+OHx51.exe PSoC_pram_controller.omf HEXFILE(PSoC_pram_controller.ihx)
+c8051-elf-omf2elf.exe PSoC_pram_controller.omf PSoC_pram_controller.elf
+cyhextool -o .\DP8051\DP8051_Keil_951\Debug\PSoC_pram_controller.hex -f .\DP8051\DP8051_Keil_951\Debug\PSoC_pram_controller.ihx -prot .\Generated_Source\PSoC3\protect.hex -id 1E028069 -a EEPROM=90200000:800,PROGRAM=00000000:10000,CONFIG=80000000:2000,PROTECT=90400000:40 -meta 0301 -cunv 00004005 -wonv BC90ACAF -ecc .\Generated_Source\PSoC3\config.hex
+Flash used: 16374 of 65536 bytes (25,0 %).
+SRAM used: 302 of 8192 bytes (3,7 %).
+--------------- Build Succeeded: 12/19/2013 21:53:23 ---------------

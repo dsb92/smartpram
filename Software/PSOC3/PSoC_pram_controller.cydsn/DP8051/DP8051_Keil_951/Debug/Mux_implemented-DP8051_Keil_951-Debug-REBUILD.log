@@ -1,0 +1,7 @@
+--------------- Rebuild Started: 12/19/2013 17:43:35 Project: main.c, Configuration: DP8051 Keil 9.51 Debug ---------------
+c51.exe .\main.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\main.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\main.obj)
+WARNING: .\main.c:159: 'zigbee_start': missing function-prototype
+ERROR: .\main.c:175: 'zigbee_start': redefinition
+ERROR: .\main.c:184: 'zigbee_start': redefinition
+The command 'c51.exe' failed with exit code '2'.
+--------------- Rebuild Failed: 12/19/2013 17:43:36 ---------------

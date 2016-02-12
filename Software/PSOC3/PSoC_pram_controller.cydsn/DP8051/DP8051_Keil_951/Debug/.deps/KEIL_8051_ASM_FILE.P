@@ -1,0 +1,20 @@
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/DP8051/DP8051_Keil_951/Debug/CyBootAsmKeil.obj : C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/PSoC3_8051.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cydevicekeil.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cydevicekeil_trm.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cyfitterkeil.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/CyBootAsmKeil.a51 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/PSoC3_8051.inc : 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cydevicekeil.inc : 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cydevicekeil_trm.inc : 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cyfitterkeil.inc : 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/CyBootAsmKeil.a51 : 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/DP8051/DP8051_Keil_951/Debug/KeilStart.obj : C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/PSoC3_8051.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cydevicekeil.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cydevicekeil_trm.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cyfitterkeil.inc C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/KeilStart.a51 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/KeilStart.a51 : 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/DP8051/DP8051_Keil_951/Debug/cymem.obj : C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cymem.a51 
+
+C:/Users/J.C.Joachim/Desktop/Gruppe\ 8/Implementering/Software/PSoC/PSoC_pram_controller.cydsn/Generated_Source/PSoC3/cymem.a51 : 
+

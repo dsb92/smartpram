@@ -1,0 +1,639 @@
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE PGA_1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\PGA_1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\PGA_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\PGA_1.lst) CD DB NOIP OT
+                    -(2,SIZE) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\PGA_1.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: PGA_1.c  
+   3          * Version 2.0
+   4          *
+   5          * Description:
+   6          *  This file provides the source code to the API for the PGA 
+   7          *  User Module.
+   8          *
+   9          * Note:
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions, 
+  14          * disclaimers, and limitations in the end user license agreement accompanying 
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "PGA_1.h"
+  19          
+  20          #if (!CY_PSOC5A)
+  21              #if (CYDEV_VARIABLE_VDDA == 1u)
+                      #include "CyScBoostClk.h"
+                  #endif /* (CYDEV_VARIABLE_VDDA == 1u) */
+  24          #endif /* (!CY_PSOC5A) */
+  25          
+  26          #if (CY_PSOC5A)
+                  static PGA_1_BACKUP_STRUCT  PGA_1_P5backup;
+              #endif /* (CY_ PSOC5A) */
+  29          
+  30          uint8 PGA_1_initVar = 0u;
+  31          
+  32          
+  33          /*******************************************************************************   
+  34          * Function Name: PGA_1_Init
+  35          ********************************************************************************
+  36          *
+  37          * Summary:
+  38          *  Initialize component's parameters to the parameters set by user in the 
+  39          *  customizer of the component placed onto schematic. Usually called in 
+  40          *  PGA_1_Start().
+  41          *
+  42          * Parameters:
+  43          *  void
+  44          *
+  45          * Return:
+  46          *  void
+  47          *
+  48          *******************************************************************************/
+  49          void PGA_1_Init(void) 
+  50          {
+  51   1          /* Set PGA mode */
+  52   1          PGA_1_CR0_REG = PGA_1_MODE_PGA;      
+  53   1          /* Set non-inverting PGA mode and reference mode */
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 2   
+
+  54   1          PGA_1_CR1_REG |= PGA_1_PGA_NINV;  
+  55   1          /* Set default gain and ref mode */
+  56   1          PGA_1_CR2_REG = PGA_1_VREF_MODE;
+  57   1          /* Set gain and compensation */
+  58   1          PGA_1_SetGain(PGA_1_DEFAULT_GAIN);
+  59   1          /* Set power */
+  60   1          PGA_1_SetPower(PGA_1_DEFAULT_POWER);
+  61   1      }
+  62          
+  63          
+  64          /*******************************************************************************   
+  65          * Function Name: PGA_1_Enable
+  66          ********************************************************************************
+  67          *
+  68          * Summary:
+  69          *  Enables the PGA block operation.
+  70          *
+  71          * Parameters:
+  72          *  void
+  73          *
+  74          * Return:
+  75          *  void
+  76          *
+  77          *******************************************************************************/
+  78          void PGA_1_Enable(void) 
+  79          {
+  80   1          /* This is to restore the value of register CR1 and CR2 which is saved 
+  81   1            in prior to the modifications in stop() API */
+  82   1          #if (CY_PSOC5A)
+                      if(PGA_1_P5backup.enableState == 1u)
+                      {
+                          PGA_1_CR1_REG = PGA_1_P5backup.scCR1Reg;
+                          PGA_1_CR2_REG = PGA_1_P5backup.scCR2Reg;
+                          PGA_1_P5backup.enableState = 0u;
+                      }
+                  #endif /* CY_PSOC5A */   
+  90   1      
+  91   1          /* Enable power to the Amp in Active mode*/
+  92   1          PGA_1_PM_ACT_CFG_REG |= PGA_1_ACT_PWR_EN;
+  93   1      
+  94   1          /* Enable power to the Amp in Alternative Active mode*/
+  95   1          PGA_1_PM_STBY_CFG_REG |= PGA_1_STBY_PWR_EN;
+  96   1          
+  97   1          PGA_1_PUMP_CR1_REG |= PGA_1_PUMP_CR1_SC_CLKSEL;
+  98   1          
+  99   1          #if (!CY_PSOC5A)
+ 100   1              #if (CYDEV_VARIABLE_VDDA == 1u)
+                          if(CyScPumpEnabled == 1u)
+                          {
+                              PGA_1_BSTCLK_REG &= (uint8)(~PGA_1_BST_CLK_INDEX_MASK);
+                              PGA_1_BSTCLK_REG |= PGA_1_BST_CLK_EN | CyScBoostClk__INDEX;
+                              PGA_1_SC_MISC_REG |= PGA_1_PUMP_FORCE;
+                              CyScBoostClk_Start();
+                          }
+                          else
+                          {
+                              PGA_1_BSTCLK_REG &= (uint8)(~PGA_1_BST_CLK_EN);
+                              PGA_1_SC_MISC_REG &= (uint8)(~PGA_1_PUMP_FORCE);
+                          }
+                      #endif /* (CYDEV_VARIABLE_VDDA == 1u) */
+ 114   1          #endif /* (!CY_PSOC5A) */
+ 115   1      }
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 3   
+
+ 116          
+ 117          
+ 118          /*******************************************************************************
+ 119          * Function Name: PGA_1_Start
+ 120          ********************************************************************************
+ 121          *
+ 122          * Summary:
+ 123          *  The start function initializes the PGA with the default values and sets
+ 124          *  the power to the given level. A power level of 0, is same as executing
+ 125          *  the stop function.
+ 126          *
+ 127          * Parameters:
+ 128          *  void
+ 129          *
+ 130          * Return:
+ 131          *  void
+ 132          *
+ 133          *******************************************************************************/
+ 134          void PGA_1_Start(void) 
+ 135          {
+ 136   1      
+ 137   1          /* This is to restore the value of register CR1 and CR2 which is saved 
+ 138   1            in prior to the modification in stop() API */
+ 139   1      
+ 140   1          if(PGA_1_initVar == 0u)
+ 141   1          {
+ 142   2              PGA_1_Init();
+ 143   2              PGA_1_initVar = 1u;
+ 144   2          }
+ 145   1      
+ 146   1          PGA_1_Enable();
+ 147   1      }
+ 148          
+ 149          
+ 150          /*******************************************************************************
+ 151          * Function Name: PGA_1_Stop
+ 152          ********************************************************************************
+ 153          *
+ 154          * Summary:
+ 155          *  Powers down amplifier to lowest power state.
+ 156          *
+ 157          * Parameters:
+ 158          *  void
+ 159          *
+ 160          * Return:
+ 161          *  void
+ 162          *
+ 163          *******************************************************************************/
+ 164          void PGA_1_Stop(void) 
+ 165          { 
+ 166   1          /* Disble power to the Amp in Active mode template */
+ 167   1          PGA_1_PM_ACT_CFG_REG &= (uint8)(~PGA_1_ACT_PWR_EN);
+ 168   1      
+ 169   1          /* Disble power to the Amp in Alternative Active mode template */
+ 170   1          PGA_1_PM_STBY_CFG_REG &= (uint8)(~PGA_1_STBY_PWR_EN);
+ 171   1      
+ 172   1          #if (!CY_PSOC5A)
+ 173   1              #if (CYDEV_VARIABLE_VDDA == 1u)
+                          PGA_1_BSTCLK_REG &= (uint8)(~PGA_1_BST_CLK_EN);
+                          /* Disable pumps only if there aren't any SC block in use */
+                          if ((PGA_1_PM_ACT_CFG_REG & PGA_1_PM_ACT_CFG_MASK) == 0u)
+                          {
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 4   
+
+                              PGA_1_SC_MISC_REG &= (uint8)(~PGA_1_PUMP_FORCE);
+                              PGA_1_PUMP_CR1_REG &= (uint8)(~PGA_1_PUMP_CR1_SC_CLKSEL);
+                              CyScBoostClk_Stop();
+                          }
+                      #endif /* CYDEV_VARIABLE_VDDA == 1u */
+ 183   1          #endif /* (CY_PSOC3 || CY_PSOC5LP) */
+ 184   1      
+ 185   1          /* This sets PGA in zero current mode and output routes are valid */
+ 186   1          #if (CY_PSOC5A)
+                      PGA_1_P5backup.scCR1Reg = PGA_1_CR1_REG;
+                      PGA_1_P5backup.scCR2Reg = PGA_1_CR2_REG;
+                      PGA_1_CR1_REG = 0x00u;
+                      PGA_1_CR2_REG = 0x00u;
+                      PGA_1_P5backup.enableState = 1u;
+                  #endif /* CY_PSOC5A */
+ 193   1      }
+ 194          
+ 195          
+ 196          /*******************************************************************************
+ 197          * Function Name: PGA_1_SetPower
+ 198          ********************************************************************************
+ 199          *
+ 200          * Summary:
+ 201          *  Set the power of the PGA.
+ 202          *
+ 203          * Parameters:
+ 204          *  power: Sets power level between (0) and (3) high power
+ 205          *
+ 206          * Return:
+ 207          *  void
+ 208          *
+ 209          *******************************************************************************/
+ 210          void PGA_1_SetPower(uint8 power) 
+ 211          {
+ 212   1          uint8 tmpCR;
+ 213   1      
+ 214   1          tmpCR = PGA_1_CR1_REG & (uint8)(~PGA_1_DRIVE_MASK);
+ 215   1          tmpCR |= (power & PGA_1_DRIVE_MASK);
+ 216   1          PGA_1_CR1_REG = tmpCR;  
+ 217   1      }
+ 218          
+ 219          
+ 220          /*******************************************************************************
+ 221          * Function Name: PGA_1_SetGain
+ 222          ********************************************************************************
+ 223          *
+ 224          * Summary:
+ 225          *  This function sets values of the input and feedback resistors to set a 
+ 226          *  specific gain of the amplifier.
+ 227          *
+ 228          * Parameters:
+ 229          *  gain: Gain value of PGA (See header file for gain values.)
+ 230          *
+ 231          * Return:
+ 232          *  void 
+ 233          *
+ 234          *******************************************************************************/
+ 235          void PGA_1_SetGain(uint8 gain) 
+ 236          {
+ 237   1          /* Constant array for gain settings */
+ 238   1          const uint8 PGA_1_GainArray[9] = { 
+ 239   1              (PGA_1_RVAL_0K   | PGA_1_R20_40B_40K | PGA_1_BIAS_LOW), /* G=1  */
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 5   
+
+ 240   1              (PGA_1_RVAL_40K  | PGA_1_R20_40B_40K | PGA_1_BIAS_LOW), /* G=2  */
+ 241   1              (PGA_1_RVAL_120K | PGA_1_R20_40B_40K | PGA_1_BIAS_LOW), /* G=4  */
+ 242   1              (PGA_1_RVAL_280K | PGA_1_R20_40B_40K | PGA_1_BIAS_LOW), /* G=8  */
+ 243   1              (PGA_1_RVAL_600K | PGA_1_R20_40B_40K | PGA_1_BIAS_LOW), /* G=16 */
+ 244   1              (PGA_1_RVAL_460K | PGA_1_R20_40B_40K | PGA_1_BIAS_LOW), /* G=24, Sets Rin as 20k */
+ 245   1              (PGA_1_RVAL_620K | PGA_1_R20_40B_20K | PGA_1_BIAS_LOW), /* G=32 */
+ 246   1              (PGA_1_RVAL_470K | PGA_1_R20_40B_20K | PGA_1_BIAS_LOW), /* G=48, Sets Rin as 10k */
+ 247   1              (PGA_1_RVAL_490K | PGA_1_R20_40B_20K | PGA_1_BIAS_LOW)  /* G=50, Sets Rin as 10k */
+ 248   1          };
+ 249   1          
+ 250   1          /* Constant array for gain compenstion settings */
+ 251   1          const uint8 PGA_1_GainComp[9] = { 
+ 252   1              ( PGA_1_COMP_4P35PF  | (uint8)( PGA_1_REDC_00 >> 2 )), /* G=1  */
+ 253   1              ( PGA_1_COMP_4P35PF  | (uint8)( PGA_1_REDC_01 >> 2 )), /* G=2  */
+ 254   1              ( PGA_1_COMP_3P0PF   | (uint8)( PGA_1_REDC_01 >> 2 )), /* G=4  */
+ 255   1              ( PGA_1_COMP_3P0PF   | (uint8)( PGA_1_REDC_01 >> 2 )), /* G=8  */
+ 256   1              ( PGA_1_COMP_3P6PF   | (uint8)( PGA_1_REDC_01 >> 2 )), /* G=16 */
+ 257   1              ( PGA_1_COMP_3P6PF   | (uint8)( PGA_1_REDC_11 >> 2 )), /* G=24 */
+ 258   1              ( PGA_1_COMP_3P6PF   | (uint8)( PGA_1_REDC_11 >> 2 )), /* G=32 */
+ 259   1              ( PGA_1_COMP_3P6PF   | (uint8)( PGA_1_REDC_00 >> 2 )), /* G=48 */
+ 260   1              ( PGA_1_COMP_3P6PF   | (uint8)( PGA_1_REDC_00 >> 2 ))  /* G=50 */
+ 261   1          };
+ 262   1          
+ 263   1          /* Only set new gain if it is a valid gain */
+ 264   1          if( gain <= PGA_1_GAIN_MAX)
+ 265   1          {
+ 266   2              /* Clear resistors, redc, and bias */
+ 267   2              PGA_1_CR2_REG &= (uint8)(~(PGA_1_RVAL_MASK | PGA_1_R20_40B_MASK | 
+ 268   2                                      PGA_1_REDC_MASK | PGA_1_BIAS_MASK ));
+ 269   2      
+ 270   2              /* Set gain value resistors, redc comp, and bias */
+ 271   2              PGA_1_CR2_REG |= (PGA_1_GainArray[gain] |
+ 272   2                                      ((uint8)(PGA_1_GainComp[gain] << 2 ) & PGA_1_REDC_MASK));
+ 273   2      
+ 274   2              /* Clear sc_comp  */
+ 275   2              PGA_1_CR1_REG &= (uint8)(~PGA_1_COMP_MASK);
+ 276   2              /* Set sc_comp  */
+ 277   2              PGA_1_CR1_REG |= ( PGA_1_GainComp[gain] | PGA_1_COMP_MASK );
+ 278   2          }
+ 279   1      }
+ 280          
+ 281          
+ 282          /* [] END OF FILE */
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 6   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION PGA_1_Init (BEGIN)
+                                           ; SOURCE LINE # 49
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 52
+0000 905808            MOV     DPTR,#05808H
+0003 740C              MOV     A,#0CH
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 54
+0006 905809            MOV     DPTR,#05809H
+0009 E0                MOVX    A,@DPTR
+000A FF                MOV     R7,A
+000B EF                MOV     A,R7
+000C 4420              ORL     A,#020H
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 56
+0011 90580A            MOV     DPTR,#0580AH
+0014 E4                CLR     A
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 58
+0016 7F08              MOV     R7,#08H
+0018 120000      R     LCALL   _PGA_1_SetGain
+                                           ; SOURCE LINE # 60
+001B 7F03              MOV     R7,#03H
+001D 120000      R     LCALL   _PGA_1_SetPower
+                                           ; SOURCE LINE # 61
+0020 22                RET     
+             ; FUNCTION PGA_1_Init (END)
+
+             ; FUNCTION PGA_1_Enable (BEGIN)
+                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 92
+0000 9043A9            MOV     DPTR,#043A9H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 4404              ORL     A,#04H
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 95
+000B 9043B9            MOV     DPTR,#043B9H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 4404              ORL     A,#04H
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 97
+0016 905877            MOV     DPTR,#05877H
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 4480              ORL     A,#080H
+001E FF                MOV     R7,A
+001F EF                MOV     A,R7
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 7   
+
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 115
+0021 22                RET     
+             ; FUNCTION PGA_1_Enable (END)
+
+             ; FUNCTION PGA_1_Start (BEGIN)
+                                           ; SOURCE LINE # 134
+                                           ; SOURCE LINE # 135
+                                           ; SOURCE LINE # 140
+0000 900000      R     MOV     DPTR,#PGA_1_initVar
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 7009              JNZ     ?C0003
+                                           ; SOURCE LINE # 141
+                                           ; SOURCE LINE # 142
+0008 120000      R     LCALL   PGA_1_Init
+                                           ; SOURCE LINE # 143
+000B 900000      R     MOV     DPTR,#PGA_1_initVar
+000E 7401              MOV     A,#01H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 144
+0011         ?C0003:
+                                           ; SOURCE LINE # 146
+0011 120000      R     LCALL   PGA_1_Enable
+                                           ; SOURCE LINE # 147
+0014 22                RET     
+             ; FUNCTION PGA_1_Start (END)
+
+             ; FUNCTION PGA_1_Stop (BEGIN)
+                                           ; SOURCE LINE # 164
+                                           ; SOURCE LINE # 165
+                                           ; SOURCE LINE # 167
+0000 9043A9            MOV     DPTR,#043A9H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 54FB              ANL     A,#0FBH
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 170
+000B 9043B9            MOV     DPTR,#043B9H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 54FB              ANL     A,#0FBH
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 193
+0016 22                RET     
+             ; FUNCTION PGA_1_Stop (END)
+
+             ; FUNCTION _PGA_1_SetPower (BEGIN)
+                                           ; SOURCE LINE # 210
+0000 900000      R     MOV     DPTR,#power
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 211
+                                           ; SOURCE LINE # 214
+0005 905809            MOV     DPTR,#05809H
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 8   
+
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 54FC              ANL     A,#0FCH
+000D FF                MOV     R7,A
+000E 900000      R     MOV     DPTR,#tmpCR
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 215
+0013 900000      R     MOV     DPTR,#tmpCR
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 900000      R     MOV     DPTR,#power
+001B E0                MOVX    A,@DPTR
+001C FE                MOV     R6,A
+001D EE                MOV     A,R6
+001E 5403              ANL     A,#03H
+0020 FE                MOV     R6,A
+0021 EF                MOV     A,R7
+0022 4E                ORL     A,R6
+0023 FF                MOV     R7,A
+0024 900000      R     MOV     DPTR,#tmpCR
+0027 EF                MOV     A,R7
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 216
+0029 900000      R     MOV     DPTR,#tmpCR
+002C E0                MOVX    A,@DPTR
+002D FF                MOV     R7,A
+002E 905809            MOV     DPTR,#05809H
+0031 EF                MOV     A,R7
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 217
+0033 22                RET     
+             ; FUNCTION _PGA_1_SetPower (END)
+
+             ; FUNCTION _PGA_1_SetGain (BEGIN)
+                                           ; SOURCE LINE # 235
+0000 900000      R     MOV     DPTR,#gain
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 238
+0005 7BFF              MOV     R3,#0FFH
+0007 7A00        R     MOV     R2,#HIGH _?ix1000
+0009 7900        R     MOV     R1,#LOW _?ix1000
+000B C003              PUSH    AR3
+000D C002              PUSH    AR2
+000F C001              PUSH    AR1
+0011 7B01              MOV     R3,#01H
+0013 7A00        R     MOV     R2,#HIGH PGA_1_GainArray
+0015 7900        R     MOV     R1,#LOW PGA_1_GainArray
+0017 A801              MOV     R0,AR1
+0019 AC02              MOV     R4,AR2
+001B AD03              MOV     R5,AR3
+001D D001              POP     AR1
+001F D002              POP     AR2
+0021 D003              POP     AR3
+0023 7E00              MOV     R6,#00H
+0025 7F09              MOV     R7,#09H
+0027 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 251
+002A 7BFF              MOV     R3,#0FFH
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 9   
+
+002C 7A00        R     MOV     R2,#HIGH _?ix1001
+002E 7900        R     MOV     R1,#LOW _?ix1001
+0030 C003              PUSH    AR3
+0032 C002              PUSH    AR2
+0034 C001              PUSH    AR1
+0036 7B01              MOV     R3,#01H
+0038 7A00        R     MOV     R2,#HIGH PGA_1_GainComp
+003A 7900        R     MOV     R1,#LOW PGA_1_GainComp
+003C A801              MOV     R0,AR1
+003E AC02              MOV     R4,AR2
+0040 AD03              MOV     R5,AR3
+0042 D001              POP     AR1
+0044 D002              POP     AR2
+0046 D003              POP     AR3
+0048 7E00              MOV     R6,#00H
+004A 7F09              MOV     R7,#09H
+004C 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 264
+004F 900000      R     MOV     DPTR,#gain
+0052 E0                MOVX    A,@DPTR
+0053 FF                MOV     R7,A
+0054 EF                MOV     A,R7
+0055 D3                SETB    C
+0056 9408              SUBB    A,#08H
+0058 507E              JNC     ?C0008
+                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 267
+005A 90580A            MOV     DPTR,#0580AH
+005D E0                MOVX    A,@DPTR
+005E FF                MOV     R7,A
+005F EF                MOV     A,R7
+0060 5480              ANL     A,#080H
+0062 FF                MOV     R7,A
+0063 EF                MOV     A,R7
+0064 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 272
+0065 90580A            MOV     DPTR,#0580AH
+0068 C083              PUSH    DPH
+006A C082              PUSH    DPL
+006C E0                MOVX    A,@DPTR
+006D FF                MOV     R7,A
+006E 900000      R     MOV     DPTR,#gain
+0071 E0                MOVX    A,@DPTR
+0072 FE                MOV     R6,A
+0073 7400        R     MOV     A,#LOW PGA_1_GainComp
+0075 2E                ADD     A,R6
+0076 F582              MOV     DPL,A
+0078 E4                CLR     A
+0079 3400        R     ADDC    A,#HIGH PGA_1_GainComp
+007B F583              MOV     DPH,A
+007D E0                MOVX    A,@DPTR
+007E FE                MOV     R6,A
+007F EE                MOV     A,R6
+0080 25E0              ADD     A,ACC
+0082 25E0              ADD     A,ACC
+0084 FE                MOV     R6,A
+0085 EE                MOV     A,R6
+0086 540C              ANL     A,#0CH
+0088 FE                MOV     R6,A
+0089 900000      R     MOV     DPTR,#gain
+008C E0                MOVX    A,@DPTR
+008D FD                MOV     R5,A
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 10  
+
+008E 7400        R     MOV     A,#LOW PGA_1_GainArray
+0090 2D                ADD     A,R5
+0091 F582              MOV     DPL,A
+0093 E4                CLR     A
+0094 3400        R     ADDC    A,#HIGH PGA_1_GainArray
+0096 F583              MOV     DPH,A
+0098 E0                MOVX    A,@DPTR
+0099 FD                MOV     R5,A
+009A EE                MOV     A,R6
+009B 4D                ORL     A,R5
+009C FE                MOV     R6,A
+009D EF                MOV     A,R7
+009E 4E                ORL     A,R6
+009F FF                MOV     R7,A
+00A0 D082              POP     DPL
+00A2 D083              POP     DPH
+00A4 EF                MOV     A,R7
+00A5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 275
+00A6 905809            MOV     DPTR,#05809H
+00A9 E0                MOVX    A,@DPTR
+00AA FF                MOV     R7,A
+00AB EF                MOV     A,R7
+00AC 54F3              ANL     A,#0F3H
+00AE FF                MOV     R7,A
+00AF EF                MOV     A,R7
+00B0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 277
+00B1 905809            MOV     DPTR,#05809H
+00B4 C083              PUSH    DPH
+00B6 C082              PUSH    DPL
+00B8 E0                MOVX    A,@DPTR
+00B9 FF                MOV     R7,A
+00BA 900000      R     MOV     DPTR,#gain
+00BD E0                MOVX    A,@DPTR
+00BE FE                MOV     R6,A
+00BF 7400        R     MOV     A,#LOW PGA_1_GainComp
+00C1 2E                ADD     A,R6
+00C2 F582              MOV     DPL,A
+00C4 E4                CLR     A
+00C5 3400        R     ADDC    A,#HIGH PGA_1_GainComp
+00C7 F583              MOV     DPH,A
+00C9 E0                MOVX    A,@DPTR
+00CA FE                MOV     R6,A
+00CB EE                MOV     A,R6
+00CC 440C              ORL     A,#0CH
+00CE FE                MOV     R6,A
+00CF EF                MOV     A,R7
+00D0 4E                ORL     A,R6
+00D1 FF                MOV     R7,A
+00D2 D082              POP     DPL
+00D4 D083              POP     DPH
+00D6 EF                MOV     A,R7
+00D7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 279
+00D8         ?C0008:
+00D8 22                RET     
+             ; FUNCTION _PGA_1_SetGain (END)
+
+
+
+C51 COMPILER V9.51   PGA_1                                                                 12/19/2013 21:53:12 PAGE 11  
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    380    ----
+   CONSTANT SIZE    =     18    ----
+   XDATA SIZE       =      1      21
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

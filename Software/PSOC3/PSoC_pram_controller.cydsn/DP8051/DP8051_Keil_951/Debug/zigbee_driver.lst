@@ -1,0 +1,1880 @@
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE ZIGBEE_DRIVER
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\zigbee_driver.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\zigbee_driver.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\zigbee_driver.lst) CD DB NOIP OT(2,SIZE
+                    -) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\zigbee_driver.obj)
+
+line level    source
+
+   1          /* ============================================================================
+   2           *
+   3           * Project: Smart Pram
+   4           * Zigbee functionality driver
+   5           *
+   6           * Author: Kjeld Laursen
+   7           * October 2013
+   8           *
+   9           * ============================================================================
+  10           */
+  11          
+  12          // include own header file
+  13          #include "zigbee_driver.h"
+  14          
+  15          // Global varibles
+  16          static uint8 RSSI_status = 0;                   // Indicates if RSSI is appended to RX-fifo
+  17          static uint8 sequence_number = 0;               // Increases with every payload transmission
+  18          
+  19          // Addresses and the default value, (long address not used but included for future update of driver)
+  20          static uint8 source_PANID[2] = { 0x00, 0x00 };
+  21          static uint8 source_SHORTADR[2] = { 0x00, 0x00 };
+  22          static uint8 source_LONGADR[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  23          static uint8 destination_PANID[2] = { 0x00, 0x00 };
+  24          static uint8 destination_SHORTADR[2] = { 0x00, 0x00 };
+  25          static uint8 destination_LONGADR[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  26                  
+  27          
+  28          //******************************************************************************
+  29          // Zigbee configuration functions
+  30          //******************************************************************************
+  31          
+  32          // Hardware reset of the zigbee 
+  33          void zigbee_reset()
+  34          {
+  35   1          zigbee_set_resetpin(0);                             // reset zigbee(s)
+  36   1          zigbee_set_wakepin(0);                              // set low, not really used here
+  37   1          zigbee_delay_us(250);                               // wait 0,25ms
+  38   1          zigbee_set_resetpin(1);                             // release reset, zigbee(s) boot
+  39   1          zigbee_delay_us(2250);                              // wait 2,25ms, ensures proper bootup
+  40   1      }
+  41          
+  42          // Select wireless channel, valid range is 11 - 26
+  43          // Channel 11 - 26
+  44          void zigbee_set_ch(uint8 CH)
+  45          {
+  46   1              uint8 temp;
+  47   1              if ( (CH < 11) || (CH > 26) )           // Check for invalid value
+  48   1                      CH = 11;                                                // Default channel set to 11
+  49   1              CH = ((CH - 11) << 4) | 0x03;           // Prepare data for register
+  50   1              zigbee_long_write(0x200, CH);           // RFCON0
+  51   1              temp = zigbee_short_read(0x36);         // RFCTL - save old value
+  52   1              temp = (temp & 0xF8) | 0x04;            // updated value, RF-state = reset
+  53   1              zigbee_short_write(0x36, temp);         // RFCTL - write updated value
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 2   
+
+  54   1              temp = temp & 0xF8;                                     // updated value, RF-state = normal
+  55   1              zigbee_short_write(0x36, temp);         // RFCTL - write updated value
+  56   1              zigbee_delay_us(200);                                           // Wait minimum 192us
+  57   1      }
+  58          
+  59          // Set transmit power, valid range is 0 - 31
+  60          // TX-power 0 - 31
+  61          void zigbee_set_TXpower(uint8 power)
+  62          {
+  63   1              if ( power > 31 )                                       // Check for invalid value
+  64   1                      power = 31;                                             // Default Transmit power set to 31
+  65   1              power = (!power) << 3;                          // Prepare data for register
+  66   1              zigbee_long_write(0x203, power);        // RFCON3 - write new value
+  67   1      }
+  68          
+  69          // Set Clear Channel Assessment
+  70          // CCA-mode 1 - 3, Carrier Sense 0 - 15, Energy Detection 0 - 255
+  71          void zigbee_set_CCA(uint8 CCAmode, uint8 CS, uint8 ED)
+  72          {
+  73   1              uint8 temp;
+  74   1              if ( (CCAmode > 3) || (CCAmode < 1) )   // Check for invalid value
+  75   1                      CCAmode = 1;                                            // Default CCA-mode set to mode 1 (2)
+  76   1              if ( CS > 0x0F )                                                // Check for invalid value
+  77   1                      CS = 0x0E;                                                      // Default carrier sense set to 14
+  78   1              
+  79   1              switch( CCAmode ){
+  80   2                      case 1:                                                         // CCA-mode 1, Energy threshold only
+  81   2                              temp = 0x80 | (0x0E << 2);              // update value
+  82   2                              zigbee_short_write(0x3A, temp); // BBREG2 - CCA-mode and default carrier sense 
+  83   2                              zigbee_short_write(0x3F, ED);   // CCAEDTH - energy threshold
+  84   2                              break;
+  85   2                      case 2:                                                         // CCA-mode 2, Carrier sense only
+  86   2                              temp = 0x40 | (CS << 2);                // update value
+  87   2                              zigbee_short_write(0x3A, temp); // BBREG2 - CCA-mode and carrier sense
+  88   2                              zigbee_short_write(0x3F, 0x60); // CCAEDTH - default energy threshold
+  89   2                              break;
+  90   2                      case 3:                                                         // CCA-mode 3, Carrier sense with energy threshold
+  91   2                              temp = 0xC0 | (CS << 2);                // update value
+  92   2                              zigbee_short_write(0x3A, temp); // BBREG2 - CCA-mode and carrier sense
+  93   2                              zigbee_short_write(0x3F, ED);   // CCAEDTH - energy threshold
+  94   2                              break;
+  95   2              }
+  96   1      }
+  97                  
+  98          // Set RSSI automatic mode
+  99          // 0 = RSSI OFF, 1 = RSSI ON
+ 100          void zigbee_set_RSSI(uint8 RSSImode)
+ 101          {
+ 102   1              if ( RSSImode > 1 )                                             // Check for invalid value
+ 103   1                      RSSImode = 1;                                           // Default RSSI-mode, append on
+ 104   1              
+ 105   1              switch( RSSImode ){
+ 106   2                      case 0:                                                         // Automatically append RSSI RX-fifo: OFF
+ 107   2                              zigbee_short_write(0x3E, 0x00); // BBREG6 - RSSIMODE2 = 0
+ 108   2                              RSSI_status = 0;                                // Reset gloabal variable
+ 109   2                              break;
+ 110   2                      case 1:                                                         // Automatically append RSSI RX-fifo: ON
+ 111   2                              zigbee_short_write(0x3E, 0x40); // BBREG6 - RSSIMODE2 = 1
+ 112   2                              RSSI_status = 1;                                // Set gloabal variable
+ 113   2                              break;
+ 114   2              }
+ 115   1      }
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 3   
+
+ 116          
+ 117          // Set non-beacon mode, device or PAN coordinator
+ 118          // 0 = device, 1 = PAN coordinator
+ 119          void zigbee_set_nonbeacon_mode(uint8 beacon_mode)
+ 120          {
+ 121   1              uint8 temp;
+ 122   1              if ( beacon_mode > 1 )                                  // Check for invalid value
+ 123   1                      beacon_mode = 0;                                        // Default non-beacon mode
+ 124   1              
+ 125   1              temp = zigbee_short_read(0x00);                 // RXMCR - save old value
+ 126   1              switch( beacon_mode ){
+ 127   2                      case 0:                                                         // Non-beacon device
+ 128   2                              temp = (temp & 0x03) | 0x00;    // update value
+ 129   2                              zigbee_short_write(0x00, temp); // RXMCR - new updated value
+ 130   2                              zigbee_short_write(0x11, 0x1C); // TXMCR - set unslotted mode
+ 131   2                              break;
+ 132   2                      case 1:                                                         // Non-beacon PAN coordinator
+ 133   2                              temp = (temp & 0x03) | 0x80;    // update value
+ 134   2                              zigbee_short_write(0x00, temp); // RXMCR - new updated value
+ 135   2                              zigbee_short_write(0x11, 0x1C); // TXMCR - set unslotted mode
+ 136   2                              zigbee_short_write(0x10, 0xFF); // ORDOR - BO = 0xF and SO =0xF
+ 137   2                              break;
+ 138   2              }
+ 139   1      }
+ 140          
+ 141          // Set Recption mode, CRC and MAC address error checking
+ 142          // 0 = Normal, 1 = Promiscuous, 2 = Error
+ 143          void zigbee_set_reception_mode(uint8 reception_mode)
+ 144          {
+ 145   1              uint8 temp;
+ 146   1              if ( reception_mode > 2 )                               // Check for invalid value
+ 147   1                      reception_mode = 0;                                     // Default normal, full check
+ 148   1              
+ 149   1              temp = zigbee_short_read(0x00);                 // RXMCR - save old value
+ 150   1              switch( reception_mode ){
+ 151   2                      case 0:                                                         // Normal, Full check of CRC and address
+ 152   2                              temp = (temp & 0xFC) | 0x00;    // update value
+ 153   2                              zigbee_short_write(0x00, temp); // RXMCR - new updated value
+ 154   2                              break;
+ 155   2                      case 1:                                                         // Promiscuous, accepts all packets with good CRC
+ 156   2                              temp = (temp & 0xFC) | 0x01;    // update value
+ 157   2                              zigbee_short_write(0x00, temp); // RXMCR - new updated value
+ 158   2                              break;
+ 159   2                      case 2:                                                         // Error, accepts packets with good of bad CRC
+ 160   2                              temp = (temp & 0xFC) | 0x02;    // update value
+ 161   2                              zigbee_short_write(0x00, temp); // RXMCR - new updated value
+ 162   2                              break;
+ 163   2              }
+ 164   1      }
+ 165          
+ 166          // Initialise the zigbee module
+ 167          void zigbee_init()
+ 168          {
+ 169   1              zigbee_short_write(0x2A, 0x07);         // SOFTRST - Perform software reset
+ 170   1              zigbee_short_write(0x18, 0x98);         // PACON2 - Initialize FIFOEN = 1 and TXONTS = 0x6
+ 171   1              zigbee_short_write(0x2E, 0x93);         // TXSTBL – Initialize RFSTBL = 0x9 ans MSIFS = 0x3
+ 172   1              zigbee_short_write(0x21, 0x7C);         // TXPEND - Initialize MLIFS = 0x1F
+ 173   1              zigbee_short_write(0x27, 0x38);         // TXTIME - Initialize TURNTIME = 0x3
+ 174   1              
+ 175   1              zigbee_long_write(0x200, 0x03);         // RFCON0 - Initialize RFOPT = 0x3, CHANNEL = 0x0
+ 176   1              zigbee_long_write(0x201, 0x02);         // RFCON1 - Initialize VCOOPT = 0x02
+ 177   1              zigbee_long_write(0x202, 0x80);         // RFCON2 - Enable PLL (PLLEN = 1)
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 4   
+
+ 178   1              zigbee_long_write(0x206, 0x90);         // RFCON6 – Initialize TXFIL = 1 and 20MRECVR = 1
+ 179   1              zigbee_long_write(0x207, 0x80);         // RFCON7 – Initialize SLPCLKSEL = 0x2 (100 kHz Internal oscillator)
+ 180   1              zigbee_long_write(0x208, 0x10);         // RFCON8 – Initialize RFVCO = 1
+ 181   1              zigbee_long_write(0x220, 0x21);         // SLPCON1 – Initialize CLKOUTEN = 1 and SLPCLKDIV = 0x01
+ 182   1              
+ 183   1              zigbee_set_nonbeacon_mode(0);           // 0 = device, 1 = PAN coordinator
+ 184   1              zigbee_set_CCA(1, 0x0E, 0x60);          // CCA-mode 1 - 3, Carrier Sense 0 - 15, Energy Detection 0 - 255
+ 185   1              zigbee_set_RSSI(1);                                     // 0 = RSSI OFF, 1 = RSSI ON
+ 186   1              
+ 187   1              zigbee_short_write(0x32, 0xF6);         // INTCON - Interrupts RXIE, TXNIE enabled
+ 188   1              zigbee_long_write(0x211, 0x00);         // SLPCON0 - Interrupt edge = falling, sleep clock on
+ 189   1              
+ 190   1              zigbee_set_TXpower(31);                         // TX-power 0 - 31
+ 191   1              zigbee_set_ch(11);                                      // Channel 11 - 26
+ 192   1              zigbee_set_reception_mode(0);           // 0 = Normal, 1 = Promiscuous, 2 = Error
+ 193   1              zigbee_source_PANid(source_PANID);                      // Set PAN-id
+ 194   1              zigbee_source_shortadr(source_SHORTADR);        // Set short address
+ 195   1              zigbee_source_longadr(source_LONGADR);          // Set long address
+ 196   1              zigbee_short_write(0x0D, 0x01);         // RXFLUSH - Reset RX-fifo pointer and all valid frames are recieved
+ 197   1      }
+ 198          
+ 199          //******************************************************************************
+ 200          // Set the zigbee's source and destination PAN id, short and long addresses
+ 201          //******************************************************************************
+ 202          
+ 203          // 2 byte PAN id, source
+ 204          void zigbee_source_PANid(uint8 * PANid)
+ 205          {
+ 206   1              zigbee_short_write(0x01, PANid[0]);                             // PANIDL
+ 207   1              zigbee_short_write(0x02, PANid[1]);                             // PANIDH
+ 208   1              source_PANID[0] = PANid[0];                                             // Save to local variable
+ 209   1              source_PANID[1] = PANid[1];                                             // Save to local variable
+ 210   1      }
+ 211          
+ 212          // 2 byte short address, source
+ 213          void zigbee_source_shortadr(uint8 * shortadr)
+ 214          {
+ 215   1              zigbee_short_write(0x03, shortadr[0]);                  // SADRL
+ 216   1              zigbee_short_write(0x04, shortadr[1]);                  // SADRH
+ 217   1              source_SHORTADR[0] = shortadr[0];                               // Save to local variable
+ 218   1              source_SHORTADR[1] = shortadr[1];                               // Save to local variable
+ 219   1      }
+ 220          
+ 221          // 8 byte long address, source
+ 222          void zigbee_source_longadr(uint8 * longadr)
+ 223          {
+ 224   1              uint8 i;
+ 225   1              for( i = 0; i < 8; i++)
+ 226   1              {
+ 227   2                      zigbee_short_write(0x05 + i, longadr[i]);       // EADR0 - EADR7
+ 228   2                      source_LONGADR[i] = longadr[i];                         // Save to local variable
+ 229   2              }
+ 230   1      }
+ 231          
+ 232          // 2 byte PAN id, destination
+ 233          void zigbee_destination_PANid(uint8 * PANid)
+ 234          {
+ 235   1              destination_PANID[0] = PANid[0];                                // Save to local variable
+ 236   1              destination_PANID[1] = PANid[1];                                // Save to local variable
+ 237   1      }
+ 238          
+ 239          // 2 byte short address, destination
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 5   
+
+ 240          void zigbee_destination_shortadr(uint8 * shortadr)
+ 241          {
+ 242   1              destination_SHORTADR[0] = shortadr[0];                  // Save to local variable
+ 243   1              destination_SHORTADR[1] = shortadr[1];                  // Save to local variable
+ 244   1      }
+ 245          
+ 246          // 8 byte long address, destination
+ 247          void zigbee_destination_longadr(uint8 * longadr)
+ 248          {
+ 249   1              uint8 i;
+ 250   1              for( i = 0; i < 8; i++)
+ 251   1              {
+ 252   2                      destination_LONGADR[i] = longadr[i];            // Save to local variable
+ 253   2              }
+ 254   1      }
+ 255          
+ 256          //******************************************************************************
+ 257          // RF Transmission recieve and send functions
+ 258          //******************************************************************************
+ 259          
+ 260          // Reset RX-fifo pointer
+ 261          void zigbee_flush_RXfifo(void)
+ 262          {
+ 263   1              uint8 temp;
+ 264   1              temp = zigbee_short_read(0x0D);                 // RXFLUSH - save old value
+ 265   1              temp = temp | 0x01;                                             // update value
+ 266   1              zigbee_short_write(0x0D, temp);                 // RXFLUSH - write new value
+ 267   1      }
+ 268          
+ 269          // Transmit data in TX-fifo
+ 270          void zigbee_transmit_TXfifo(void)
+ 271          {
+ 272   1              uint8 temp;
+ 273   1              temp = zigbee_short_read(0x1B);                 // TXNCON - save old value
+ 274   1              temp = temp | 0x01;                                             // update value
+ 275   1              zigbee_short_write(0x1B, temp);                 // TXNCON - write new value
+ 276   1      }
+ 277          
+ 278          // Read the raw data directly from the RX-fifo
+ 279          uint8 zigbee_read_raw_RXfifo(uint8 * RXfifo_ptr)
+ 280          {
+ 281   1              uint8 i;
+ 282   1              zigbee_short_write(0x39, 0x04);                 // BBREG1 - disable receiving packets
+ 283   1              RXfifo_ptr[0] = zigbee_long_read(RXfifo_adr); // RX-fifo - get data packet frame length
+ 284   1              for( i = 0; i < (RXfifo_ptr[0] + 1 + RSSI_status); i++ ) // Runs through the rest of the array
+ 285   1              {
+ 286   2                      RXfifo_ptr[i + 1] = zigbee_long_read(RXfifo_adr + i + 1); // RX-fifo - read rest + 2 bytes, LQI & RSSI
+ 287   2              }
+ 288   1              zigbee_short_write(0x39, 0x00);                 // BBREG1 - enable receiving packets
+ 289   1              return RXfifo_ptr[0];
+ 290   1      }
+ 291          
+ 292          // Write the raw data directly to the TX-fifo, max 127 bytes
+ 293          void zigbee_write_raw_TXfifo(const uint8 * TXfifo_ptr)
+ 294          {
+ 295   1              uint8 i;
+ 296   1              for( i = 0; i < (TXfifo_ptr[1] + 2); i++ )      // Runs through the entire array
+ 297   1              {
+ 298   2                      zigbee_long_write(TXfifo_adr + i,TXfifo_ptr[i]); // Write data to the TX-fifo
+ 299   2              }
+ 300   1      }
+ 301          
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 6   
+
+ 302          // Read out the payload from the RX-fifo, and returns the length of payload
+ 303          // The setup of this function matches the setup of zigbee_write_payload_TXfifo() below
+ 304          uint8 zigbee_read_payload_RXfifo(uint8 * RXfifo_ptr)
+ 305          {
+ 306   1              uint8 length, i;
+ 307   1              zigbee_short_write(0x39, 0x04);                 // BBREG1 - disable receiving packets
+ 308   1              length = zigbee_long_read(RXfifo_adr);  // RX-fifo - get data packet frame length
+ 309   1              length = length - 9;                                    // Only length of payload needed
+ 310   1              for( i = 0; i < length; i++ ) // Runs through the payload part of the RF-fifo
+ 311   1              {
+ 312   2                      RXfifo_ptr[i] = zigbee_long_read(RXfifo_adr + 8 + i); // RX-fifo - reads only payload
+ 313   2              }
+ 314   1              zigbee_short_write(0x39, 0x00);                 // BBREG1 - enable receiving packets
+ 315   1              return length;
+ 316   1      }
+ 317          
+ 318          // Write the payload, max 118 bytes, to TX-fifo, rest is appended automatically
+ 319          // The setup of this function matches the setup of zigbee_read_payload_RXfifo() above
+ 320          void zigbee_write_payload_TXfifo(const uint8 * TXfifo_ptr, uint8 length)
+ 321          {
+ 322   1              uint8 i;
+ 323   1              // Write data to the TX-fifo
+ 324   1              zigbee_long_write(TXfifo_adr + 0, 0x07);                                        // Header length
+ 325   1              zigbee_long_write(TXfifo_adr + 1, length + 0x07);                       // Frame length (header length + payload length)
+ 326   1              // Header:
+ 327   1              zigbee_long_write(TXfifo_adr + 2, 0x01);                                        // Frame control field, bit 7 - 0
+ 328   1              zigbee_long_write(TXfifo_adr + 3, 0x08);                                        // Frame control field, bit 15 - 8
+ 329   1              zigbee_long_write(TXfifo_adr + 4, sequence_number);             // Sequence number, a counter
+ 330   1              zigbee_long_write(TXfifo_adr + 5, destination_PANID[0]);        // Destination PAN id MSB
+ 331   1              zigbee_long_write(TXfifo_adr + 6, destination_PANID[1]);        // Destination PAN id LSB
+ 332   1              zigbee_long_write(TXfifo_adr + 7, destination_SHORTADR[0]); // Destination short address MSB
+ 333   1              zigbee_long_write(TXfifo_adr + 8, destination_SHORTADR[1]); // Destination short address LSB
+ 334   1              // Frame payload, max 118 bytes with current setup
+ 335   1              for( i = 0; i < length ; i++ )                                                          // Runs through the entire array of the payload
+ 336   1              {
+ 337   2                      zigbee_long_write(TXfifo_adr + 9 + i,TXfifo_ptr[i]);    // Write payload to the TX-fifo
+ 338   2              }
+ 339   1              sequence_number++;
+ 340   1      }
+ 341          
+ 342          //******************************************************************************
+ 343          // Status registers, interrupt & transmit MAC
+ 344          //******************************************************************************
+ 345          
+ 346          // Interrupt status
+ 347          uint8 zigbee_status_IRQ(void)
+ 348          {
+ 349   1              return zigbee_short_read(0x31);                 // INTSTAT - read interrupt status register
+ 350   1      }
+ 351          
+ 352          // Transmit status
+ 353          uint8 zigbee_status_TX(void)
+ 354          {
+ 355   1              return zigbee_short_read(0x24);                 // TXSTAT - read transmit status register
+ 356   1      }
+ 357          
+ 358          //******************************************************************************
+ 359          // End of file
+ 360          //******************************************************************************
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 7   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION zigbee_reset (BEGIN)
+                                           ; SOURCE LINE # 33
+                                           ; SOURCE LINE # 34
+                                           ; SOURCE LINE # 35
+0000 7F00              MOV     R7,#00H
+0002 120000      E     LCALL   _zigbee_set_resetpin
+                                           ; SOURCE LINE # 36
+0005 7F00              MOV     R7,#00H
+0007 120000      E     LCALL   _zigbee_set_wakepin
+                                           ; SOURCE LINE # 37
+000A 7FFA              MOV     R7,#0FAH
+000C 7E00              MOV     R6,#00H
+000E 120000      E     LCALL   _zigbee_delay_us
+                                           ; SOURCE LINE # 38
+0011 7F01              MOV     R7,#01H
+0013 120000      E     LCALL   _zigbee_set_resetpin
+                                           ; SOURCE LINE # 39
+0016 7FCA              MOV     R7,#0CAH
+0018 7E08              MOV     R6,#08H
+001A 120000      E     LCALL   _zigbee_delay_us
+                                           ; SOURCE LINE # 40
+001D 22                RET     
+             ; FUNCTION zigbee_reset (END)
+
+             ; FUNCTION _zigbee_set_ch (BEGIN)
+                                           ; SOURCE LINE # 44
+0000 900000      R     MOV     DPTR,#CH
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 47
+0005 900000      R     MOV     DPTR,#CH
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B C3                CLR     C
+000C 940B              SUBB    A,#0BH
+000E 400B              JC      ?C0003
+0010 900000      R     MOV     DPTR,#CH
+0013 E0                MOVX    A,@DPTR
+0014 FF                MOV     R7,A
+0015 EF                MOV     A,R7
+0016 D3                SETB    C
+0017 941A              SUBB    A,#01AH
+0019 4006              JC      ?C0002
+001B         ?C0003:
+                                           ; SOURCE LINE # 48
+001B 900000      R     MOV     DPTR,#CH
+001E 740B              MOV     A,#0BH
+0020 F0                MOVX    @DPTR,A
+0021         ?C0002:
+                                           ; SOURCE LINE # 49
+0021 900000      R     MOV     DPTR,#CH
+0024 E0                MOVX    A,@DPTR
+0025 FF                MOV     R7,A
+0026 EF                MOV     A,R7
+0027 24F5              ADD     A,#0F5H
+0029 FF                MOV     R7,A
+002A EF                MOV     A,R7
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 8   
+
+002B C4                SWAP    A
+002C 54F0              ANL     A,#0F0H
+002E FF                MOV     R7,A
+002F EF                MOV     A,R7
+0030 4403              ORL     A,#03H
+0032 FF                MOV     R7,A
+0033 900000      R     MOV     DPTR,#CH
+0036 EF                MOV     A,R7
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 50
+0038 900000      R     MOV     DPTR,#CH
+003B E0                MOVX    A,@DPTR
+003C FD                MOV     R5,A
+003D 7F00              MOV     R7,#00H
+003F 7E02              MOV     R6,#02H
+0041 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 51
+0044 7F36              MOV     R7,#036H
+0046 120000      E     LCALL   _zigbee_short_read
+0049 900000      R     MOV     DPTR,#temp
+004C EF                MOV     A,R7
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 52
+004E 900000      R     MOV     DPTR,#temp
+0051 E0                MOVX    A,@DPTR
+0052 FF                MOV     R7,A
+0053 EF                MOV     A,R7
+0054 54F8              ANL     A,#0F8H
+0056 FF                MOV     R7,A
+0057 EF                MOV     A,R7
+0058 4404              ORL     A,#04H
+005A FF                MOV     R7,A
+005B 900000      R     MOV     DPTR,#temp
+005E EF                MOV     A,R7
+005F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 53
+0060 900000      R     MOV     DPTR,#temp
+0063 E0                MOVX    A,@DPTR
+0064 FD                MOV     R5,A
+0065 7F36              MOV     R7,#036H
+0067 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 54
+006A 900000      R     MOV     DPTR,#temp
+006D E0                MOVX    A,@DPTR
+006E FF                MOV     R7,A
+006F EF                MOV     A,R7
+0070 54F8              ANL     A,#0F8H
+0072 FF                MOV     R7,A
+0073 900000      R     MOV     DPTR,#temp
+0076 EF                MOV     A,R7
+0077 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 55
+0078 900000      R     MOV     DPTR,#temp
+007B E0                MOVX    A,@DPTR
+007C FD                MOV     R5,A
+007D 7F36              MOV     R7,#036H
+007F 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 56
+0082 7FC8              MOV     R7,#0C8H
+0084 7E00              MOV     R6,#00H
+0086 120000      E     LCALL   _zigbee_delay_us
+                                           ; SOURCE LINE # 57
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 9   
+
+0089 22                RET     
+             ; FUNCTION _zigbee_set_ch (END)
+
+             ; FUNCTION _zigbee_set_TXpower (BEGIN)
+                                           ; SOURCE LINE # 61
+0000 900000      R     MOV     DPTR,#power
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 63
+0005 900000      R     MOV     DPTR,#power
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B D3                SETB    C
+000C 941F              SUBB    A,#01FH
+000E 4006              JC      ?C0005
+                                           ; SOURCE LINE # 64
+0010 900000      R     MOV     DPTR,#power
+0013 741F              MOV     A,#01FH
+0015 F0                MOVX    @DPTR,A
+0016         ?C0005:
+                                           ; SOURCE LINE # 65
+0016 900000      R     MOV     DPTR,#power
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 7004              JNZ     ?C0006
+001E 7F01              MOV     R7,#01H
+0020 8002              SJMP    ?C0007
+0022         ?C0006:
+0022 7F00              MOV     R7,#00H
+0024         ?C0007:
+0024 EF                MOV     A,R7
+0025 33                RLC     A
+0026 33                RLC     A
+0027 33                RLC     A
+0028 54F8              ANL     A,#0F8H
+002A FF                MOV     R7,A
+002B 900000      R     MOV     DPTR,#power
+002E EF                MOV     A,R7
+002F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 66
+0030 900000      R     MOV     DPTR,#power
+0033 E0                MOVX    A,@DPTR
+0034 FD                MOV     R5,A
+0035 7F03              MOV     R7,#03H
+0037 7E02              MOV     R6,#02H
+0039 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 67
+003C 22                RET     
+             ; FUNCTION _zigbee_set_TXpower (END)
+
+             ; FUNCTION _zigbee_set_CCA (BEGIN)
+                                           ; SOURCE LINE # 71
+0000 900000      R     MOV     DPTR,#CCAmode
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 900000      R     MOV     DPTR,#CS
+0008 ED                MOV     A,R5
+0009 F0                MOVX    @DPTR,A
+000A 900000      R     MOV     DPTR,#ED
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 10  
+
+000D EB                MOV     A,R3
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 72
+                                           ; SOURCE LINE # 74
+000F 900000      R     MOV     DPTR,#CCAmode
+0012 E0                MOVX    A,@DPTR
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 D3                SETB    C
+0016 9403              SUBB    A,#03H
+0018 500B              JNC     ?C0010
+001A 900000      R     MOV     DPTR,#CCAmode
+001D E0                MOVX    A,@DPTR
+001E FF                MOV     R7,A
+001F EF                MOV     A,R7
+0020 C3                CLR     C
+0021 9401              SUBB    A,#01H
+0023 5006              JNC     ?C0009
+0025         ?C0010:
+                                           ; SOURCE LINE # 75
+0025 900000      R     MOV     DPTR,#CCAmode
+0028 7401              MOV     A,#01H
+002A F0                MOVX    @DPTR,A
+002B         ?C0009:
+                                           ; SOURCE LINE # 76
+002B 900000      R     MOV     DPTR,#CS
+002E E0                MOVX    A,@DPTR
+002F FF                MOV     R7,A
+0030 EF                MOV     A,R7
+0031 D3                SETB    C
+0032 940F              SUBB    A,#0FH
+0034 4006              JC      ?C0011
+                                           ; SOURCE LINE # 77
+0036 900000      R     MOV     DPTR,#CS
+0039 740E              MOV     A,#0EH
+003B F0                MOVX    @DPTR,A
+003C         ?C0011:
+                                           ; SOURCE LINE # 79
+003C 900000      R     MOV     DPTR,#CCAmode
+003F E0                MOVX    A,@DPTR
+0040 FF                MOV     R7,A
+0041 EF                MOV     A,R7
+0042 120000      E     LCALL   ?C?CCASE
+0045 0000        R     DW      ?C0013
+0047 01                DB      01H
+0048 0000        R     DW      ?C0014
+004A 02                DB      02H
+004B 0000        R     DW      ?C0015
+004D 03                DB      03H
+004E 0000              DW      00H
+0050 0000        R     DW      ?C0016
+                                           ; SOURCE LINE # 80
+0052         ?C0013:
+                                           ; SOURCE LINE # 81
+0052 900000      R     MOV     DPTR,#temp
+0055 74B8              MOV     A,#0B8H
+0057 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 82
+0058 900000      R     MOV     DPTR,#temp
+005B E0                MOVX    A,@DPTR
+005C FD                MOV     R5,A
+005D 7F3A              MOV     R7,#03AH
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 11  
+
+005F 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 83
+0062 900000      R     MOV     DPTR,#ED
+0065 E0                MOVX    A,@DPTR
+0066 FD                MOV     R5,A
+0067 7F3F              MOV     R7,#03FH
+0069 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 84
+006C 22                RET     
+                                           ; SOURCE LINE # 85
+006D         ?C0014:
+                                           ; SOURCE LINE # 86
+006D 900000      R     MOV     DPTR,#CS
+0070 E0                MOVX    A,@DPTR
+0071 FF                MOV     R7,A
+0072 EF                MOV     A,R7
+0073 25E0              ADD     A,ACC
+0075 25E0              ADD     A,ACC
+0077 FF                MOV     R7,A
+0078 EF                MOV     A,R7
+0079 4440              ORL     A,#040H
+007B FF                MOV     R7,A
+007C 900000      R     MOV     DPTR,#temp
+007F EF                MOV     A,R7
+0080 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 87
+0081 900000      R     MOV     DPTR,#temp
+0084 E0                MOVX    A,@DPTR
+0085 FD                MOV     R5,A
+0086 7F3A              MOV     R7,#03AH
+0088 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 88
+008B 7D60              MOV     R5,#060H
+008D 7F3F              MOV     R7,#03FH
+008F 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 89
+0092 22                RET     
+                                           ; SOURCE LINE # 90
+0093         ?C0015:
+                                           ; SOURCE LINE # 91
+0093 900000      R     MOV     DPTR,#CS
+0096 E0                MOVX    A,@DPTR
+0097 FF                MOV     R7,A
+0098 EF                MOV     A,R7
+0099 25E0              ADD     A,ACC
+009B 25E0              ADD     A,ACC
+009D FF                MOV     R7,A
+009E EF                MOV     A,R7
+009F 44C0              ORL     A,#0C0H
+00A1 FF                MOV     R7,A
+00A2 900000      R     MOV     DPTR,#temp
+00A5 EF                MOV     A,R7
+00A6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 92
+00A7 900000      R     MOV     DPTR,#temp
+00AA E0                MOVX    A,@DPTR
+00AB FD                MOV     R5,A
+00AC 7F3A              MOV     R7,#03AH
+00AE 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 93
+00B1 900000      R     MOV     DPTR,#ED
+00B4 E0                MOVX    A,@DPTR
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 12  
+
+00B5 FD                MOV     R5,A
+00B6 7F3F              MOV     R7,#03FH
+00B8 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 96
+00BB         ?C0016:
+00BB 22                RET     
+             ; FUNCTION _zigbee_set_CCA (END)
+
+             ; FUNCTION _zigbee_set_RSSI (BEGIN)
+                                           ; SOURCE LINE # 100
+0000 900000      R     MOV     DPTR,#RSSImode
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 102
+0005 900000      R     MOV     DPTR,#RSSImode
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B D3                SETB    C
+000C 9401              SUBB    A,#01H
+000E 4006              JC      ?C0017
+                                           ; SOURCE LINE # 103
+0010 900000      R     MOV     DPTR,#RSSImode
+0013 7401              MOV     A,#01H
+0015 F0                MOVX    @DPTR,A
+0016         ?C0017:
+                                           ; SOURCE LINE # 105
+0016 900000      R     MOV     DPTR,#RSSImode
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 120000      E     LCALL   ?C?CCASE
+001F 0000        R     DW      ?C0019
+0021 00                DB      00H
+0022 0000        R     DW      ?C0020
+0024 01                DB      01H
+0025 0000              DW      00H
+0027 0000        R     DW      ?C0021
+                                           ; SOURCE LINE # 106
+0029         ?C0019:
+                                           ; SOURCE LINE # 107
+0029 7D00              MOV     R5,#00H
+002B 7F3E              MOV     R7,#03EH
+002D 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 108
+0030 900000      R     MOV     DPTR,#RSSI_status
+0033 E4                CLR     A
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+0035 22                RET     
+                                           ; SOURCE LINE # 110
+0036         ?C0020:
+                                           ; SOURCE LINE # 111
+0036 7D40              MOV     R5,#040H
+0038 7F3E              MOV     R7,#03EH
+003A 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 112
+003D 900000      R     MOV     DPTR,#RSSI_status
+0040 7401              MOV     A,#01H
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 13  
+
+0042 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+                                           ; SOURCE LINE # 114
+                                           ; SOURCE LINE # 115
+0043         ?C0021:
+0043 22                RET     
+             ; FUNCTION _zigbee_set_RSSI (END)
+
+             ; FUNCTION _zigbee_set_nonbeacon_mode (BEGIN)
+                                           ; SOURCE LINE # 119
+0000 900000      R     MOV     DPTR,#beacon_mode
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 122
+0005 900000      R     MOV     DPTR,#beacon_mode
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B D3                SETB    C
+000C 9401              SUBB    A,#01H
+000E 4005              JC      ?C0022
+                                           ; SOURCE LINE # 123
+0010 900000      R     MOV     DPTR,#beacon_mode
+0013 E4                CLR     A
+0014 F0                MOVX    @DPTR,A
+0015         ?C0022:
+                                           ; SOURCE LINE # 125
+0015 7F00              MOV     R7,#00H
+0017 120000      E     LCALL   _zigbee_short_read
+001A 900000      R     MOV     DPTR,#temp
+001D EF                MOV     A,R7
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 126
+001F 900000      R     MOV     DPTR,#beacon_mode
+0022 E0                MOVX    A,@DPTR
+0023 FF                MOV     R7,A
+0024 EF                MOV     A,R7
+0025 120000      E     LCALL   ?C?CCASE
+0028 0000        R     DW      ?C0024
+002A 00                DB      00H
+002B 0000        R     DW      ?C0025
+002D 01                DB      01H
+002E 0000              DW      00H
+0030 0000        R     DW      ?C0026
+                                           ; SOURCE LINE # 127
+0032         ?C0024:
+                                           ; SOURCE LINE # 128
+0032 900000      R     MOV     DPTR,#temp
+0035 E0                MOVX    A,@DPTR
+0036 FF                MOV     R7,A
+0037 EF                MOV     A,R7
+0038 5403              ANL     A,#03H
+003A FF                MOV     R7,A
+003B 900000      R     MOV     DPTR,#temp
+003E EF                MOV     A,R7
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 129
+0040 900000      R     MOV     DPTR,#temp
+0043 E0                MOVX    A,@DPTR
+0044 FD                MOV     R5,A
+0045 7F00              MOV     R7,#00H
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 14  
+
+0047 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 130
+004A 7D1C              MOV     R5,#01CH
+004C 7F11              MOV     R7,#011H
+004E 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 131
+0051 22                RET     
+                                           ; SOURCE LINE # 132
+0052         ?C0025:
+                                           ; SOURCE LINE # 133
+0052 900000      R     MOV     DPTR,#temp
+0055 E0                MOVX    A,@DPTR
+0056 FF                MOV     R7,A
+0057 EF                MOV     A,R7
+0058 5403              ANL     A,#03H
+005A FF                MOV     R7,A
+005B EF                MOV     A,R7
+005C 4480              ORL     A,#080H
+005E FF                MOV     R7,A
+005F 900000      R     MOV     DPTR,#temp
+0062 EF                MOV     A,R7
+0063 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 134
+0064 900000      R     MOV     DPTR,#temp
+0067 E0                MOVX    A,@DPTR
+0068 FD                MOV     R5,A
+0069 7F00              MOV     R7,#00H
+006B 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 135
+006E 7D1C              MOV     R5,#01CH
+0070 7F11              MOV     R7,#011H
+0072 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 136
+0075 7DFF              MOV     R5,#0FFH
+0077 7F10              MOV     R7,#010H
+0079 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 137
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+007C         ?C0026:
+007C 22                RET     
+             ; FUNCTION _zigbee_set_nonbeacon_mode (END)
+
+             ; FUNCTION _zigbee_set_reception_mode (BEGIN)
+                                           ; SOURCE LINE # 143
+0000 900000      R     MOV     DPTR,#reception_mode
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 144
+                                           ; SOURCE LINE # 146
+0005 900000      R     MOV     DPTR,#reception_mode
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B D3                SETB    C
+000C 9402              SUBB    A,#02H
+000E 4005              JC      ?C0027
+                                           ; SOURCE LINE # 147
+0010 900000      R     MOV     DPTR,#reception_mode
+0013 E4                CLR     A
+0014 F0                MOVX    @DPTR,A
+0015         ?C0027:
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 15  
+
+                                           ; SOURCE LINE # 149
+0015 7F00              MOV     R7,#00H
+0017 120000      E     LCALL   _zigbee_short_read
+001A 900000      R     MOV     DPTR,#temp
+001D EF                MOV     A,R7
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 150
+001F 900000      R     MOV     DPTR,#reception_mode
+0022 E0                MOVX    A,@DPTR
+0023 FF                MOV     R7,A
+0024 EF                MOV     A,R7
+0025 120000      E     LCALL   ?C?CCASE
+0028 0000        R     DW      ?C0029
+002A 00                DB      00H
+002B 0000        R     DW      ?C0030
+002D 01                DB      01H
+002E 0000        R     DW      ?C0031
+0030 02                DB      02H
+0031 0000              DW      00H
+0033 0000        R     DW      ?C0032
+                                           ; SOURCE LINE # 151
+0035         ?C0029:
+                                           ; SOURCE LINE # 152
+0035 900000      R     MOV     DPTR,#temp
+0038 E0                MOVX    A,@DPTR
+0039 FF                MOV     R7,A
+003A EF                MOV     A,R7
+003B 54FC              ANL     A,#0FCH
+003D FF                MOV     R7,A
+003E 900000      R     MOV     DPTR,#temp
+0041 EF                MOV     A,R7
+0042 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 153
+0043 900000      R     MOV     DPTR,#temp
+0046 E0                MOVX    A,@DPTR
+0047 FD                MOV     R5,A
+0048 7F00              MOV     R7,#00H
+004A 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 154
+004D 22                RET     
+                                           ; SOURCE LINE # 155
+004E         ?C0030:
+                                           ; SOURCE LINE # 156
+004E 900000      R     MOV     DPTR,#temp
+0051 E0                MOVX    A,@DPTR
+0052 FF                MOV     R7,A
+0053 EF                MOV     A,R7
+0054 54FC              ANL     A,#0FCH
+0056 FF                MOV     R7,A
+0057 EF                MOV     A,R7
+0058 4401              ORL     A,#01H
+005A FF                MOV     R7,A
+005B 900000      R     MOV     DPTR,#temp
+005E EF                MOV     A,R7
+005F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 157
+0060 900000      R     MOV     DPTR,#temp
+0063 E0                MOVX    A,@DPTR
+0064 FD                MOV     R5,A
+0065 7F00              MOV     R7,#00H
+0067 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 158
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 16  
+
+006A 22                RET     
+                                           ; SOURCE LINE # 159
+006B         ?C0031:
+                                           ; SOURCE LINE # 160
+006B 900000      R     MOV     DPTR,#temp
+006E E0                MOVX    A,@DPTR
+006F FF                MOV     R7,A
+0070 EF                MOV     A,R7
+0071 54FC              ANL     A,#0FCH
+0073 FF                MOV     R7,A
+0074 EF                MOV     A,R7
+0075 4402              ORL     A,#02H
+0077 FF                MOV     R7,A
+0078 900000      R     MOV     DPTR,#temp
+007B EF                MOV     A,R7
+007C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 161
+007D 900000      R     MOV     DPTR,#temp
+0080 E0                MOVX    A,@DPTR
+0081 FD                MOV     R5,A
+0082 7F00              MOV     R7,#00H
+0084 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 162
+                                           ; SOURCE LINE # 163
+                                           ; SOURCE LINE # 164
+0087         ?C0032:
+0087 22                RET     
+             ; FUNCTION _zigbee_set_reception_mode (END)
+
+             ; FUNCTION zigbee_init (BEGIN)
+                                           ; SOURCE LINE # 167
+                                           ; SOURCE LINE # 168
+                                           ; SOURCE LINE # 169
+0000 7D07              MOV     R5,#07H
+0002 7F2A              MOV     R7,#02AH
+0004 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 170
+0007 7D98              MOV     R5,#098H
+0009 7F18              MOV     R7,#018H
+000B 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 171
+000E 7D93              MOV     R5,#093H
+0010 7F2E              MOV     R7,#02EH
+0012 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 172
+0015 7D7C              MOV     R5,#07CH
+0017 7F21              MOV     R7,#021H
+0019 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 173
+001C 7D38              MOV     R5,#038H
+001E 7F27              MOV     R7,#027H
+0020 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 175
+0023 7D03              MOV     R5,#03H
+0025 7F00              MOV     R7,#00H
+0027 7E02              MOV     R6,#02H
+0029 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 176
+002C 7D02              MOV     R5,#02H
+002E 7F01              MOV     R7,#01H
+0030 7E02              MOV     R6,#02H
+0032 120000      E     LCALL   _zigbee_long_write
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 17  
+
+                                           ; SOURCE LINE # 177
+0035 7D80              MOV     R5,#080H
+0037 7F02              MOV     R7,#02H
+0039 7E02              MOV     R6,#02H
+003B 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 178
+003E 7D90              MOV     R5,#090H
+0040 7F06              MOV     R7,#06H
+0042 7E02              MOV     R6,#02H
+0044 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 179
+0047 7D80              MOV     R5,#080H
+0049 7F07              MOV     R7,#07H
+004B 7E02              MOV     R6,#02H
+004D 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 180
+0050 7D10              MOV     R5,#010H
+0052 7F08              MOV     R7,#08H
+0054 7E02              MOV     R6,#02H
+0056 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 181
+0059 7D21              MOV     R5,#021H
+005B 7F20              MOV     R7,#020H
+005D 7E02              MOV     R6,#02H
+005F 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 183
+0062 7F00              MOV     R7,#00H
+0064 120000      R     LCALL   _zigbee_set_nonbeacon_mode
+                                           ; SOURCE LINE # 184
+0067 7B60              MOV     R3,#060H
+0069 7D0E              MOV     R5,#0EH
+006B 7F01              MOV     R7,#01H
+006D 120000      R     LCALL   _zigbee_set_CCA
+                                           ; SOURCE LINE # 185
+0070 7F01              MOV     R7,#01H
+0072 120000      R     LCALL   _zigbee_set_RSSI
+                                           ; SOURCE LINE # 187
+0075 7DF6              MOV     R5,#0F6H
+0077 7F32              MOV     R7,#032H
+0079 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 188
+007C 7D00              MOV     R5,#00H
+007E 7F11              MOV     R7,#011H
+0080 7E02              MOV     R6,#02H
+0082 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 190
+0085 7F1F              MOV     R7,#01FH
+0087 120000      R     LCALL   _zigbee_set_TXpower
+                                           ; SOURCE LINE # 191
+008A 7F0B              MOV     R7,#0BH
+008C 120000      R     LCALL   _zigbee_set_ch
+                                           ; SOURCE LINE # 192
+008F 7F00              MOV     R7,#00H
+0091 120000      R     LCALL   _zigbee_set_reception_mode
+                                           ; SOURCE LINE # 193
+0094 7B01              MOV     R3,#01H
+0096 7A00        R     MOV     R2,#HIGH source_PANID
+0098 7900        R     MOV     R1,#LOW source_PANID
+009A 120000      R     LCALL   _zigbee_source_PANid
+                                           ; SOURCE LINE # 194
+009D 7B01              MOV     R3,#01H
+009F 7A00        R     MOV     R2,#HIGH source_SHORTADR
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 18  
+
+00A1 7900        R     MOV     R1,#LOW source_SHORTADR
+00A3 120000      R     LCALL   _zigbee_source_shortadr
+                                           ; SOURCE LINE # 195
+00A6 7B01              MOV     R3,#01H
+00A8 7A00        R     MOV     R2,#HIGH source_LONGADR
+00AA 7900        R     MOV     R1,#LOW source_LONGADR
+00AC 120000      R     LCALL   _zigbee_source_longadr
+                                           ; SOURCE LINE # 196
+00AF 7D01              MOV     R5,#01H
+00B1 7F0D              MOV     R7,#0DH
+00B3 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 197
+00B6 22                RET     
+             ; FUNCTION zigbee_init (END)
+
+             ; FUNCTION _zigbee_source_PANid (BEGIN)
+                                           ; SOURCE LINE # 204
+0000 900000      R     MOV     DPTR,#PANid
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 206
+0006 900000      R     MOV     DPTR,#PANid
+0009 120000      E     LCALL   ?C?PLDXDATA
+000C 120000      E     LCALL   ?C?CLDPTR
+000F FD                MOV     R5,A
+0010 7F01              MOV     R7,#01H
+0012 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 207
+0015 900000      R     MOV     DPTR,#PANid
+0018 120000      E     LCALL   ?C?PLDXDATA
+001B E9                MOV     A,R1
+001C 2401              ADD     A,#01H
+001E F9                MOV     R1,A
+001F EA                MOV     A,R2
+0020 3400              ADDC    A,#00H
+0022 FA                MOV     R2,A
+0023 120000      E     LCALL   ?C?CLDPTR
+0026 FD                MOV     R5,A
+0027 7F02              MOV     R7,#02H
+0029 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 208
+002C 900000      R     MOV     DPTR,#PANid
+002F 120000      E     LCALL   ?C?PLDXDATA
+0032 120000      E     LCALL   ?C?CLDPTR
+0035 FF                MOV     R7,A
+0036 900000      R     MOV     DPTR,#source_PANID
+0039 EF                MOV     A,R7
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 209
+003B 900000      R     MOV     DPTR,#PANid
+003E 120000      E     LCALL   ?C?PLDXDATA
+0041 E9                MOV     A,R1
+0042 2401              ADD     A,#01H
+0044 F9                MOV     R1,A
+0045 EA                MOV     A,R2
+0046 3400              ADDC    A,#00H
+0048 FA                MOV     R2,A
+0049 120000      E     LCALL   ?C?CLDPTR
+004C FF                MOV     R7,A
+004D 900000      R     MOV     DPTR,#source_PANID+01H
+0050 EF                MOV     A,R7
+0051 F0                MOVX    @DPTR,A
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 19  
+
+                                           ; SOURCE LINE # 210
+0052 22                RET     
+             ; FUNCTION _zigbee_source_PANid (END)
+
+             ; FUNCTION _zigbee_source_shortadr (BEGIN)
+                                           ; SOURCE LINE # 213
+0000 900000      R     MOV     DPTR,#shortadr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 214
+                                           ; SOURCE LINE # 215
+0006 900000      R     MOV     DPTR,#shortadr
+0009 120000      E     LCALL   ?C?PLDXDATA
+000C 120000      E     LCALL   ?C?CLDPTR
+000F FD                MOV     R5,A
+0010 7F03              MOV     R7,#03H
+0012 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 216
+0015 900000      R     MOV     DPTR,#shortadr
+0018 120000      E     LCALL   ?C?PLDXDATA
+001B E9                MOV     A,R1
+001C 2401              ADD     A,#01H
+001E F9                MOV     R1,A
+001F EA                MOV     A,R2
+0020 3400              ADDC    A,#00H
+0022 FA                MOV     R2,A
+0023 120000      E     LCALL   ?C?CLDPTR
+0026 FD                MOV     R5,A
+0027 7F04              MOV     R7,#04H
+0029 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 217
+002C 900000      R     MOV     DPTR,#shortadr
+002F 120000      E     LCALL   ?C?PLDXDATA
+0032 120000      E     LCALL   ?C?CLDPTR
+0035 FF                MOV     R7,A
+0036 900000      R     MOV     DPTR,#source_SHORTADR
+0039 EF                MOV     A,R7
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 218
+003B 900000      R     MOV     DPTR,#shortadr
+003E 120000      E     LCALL   ?C?PLDXDATA
+0041 E9                MOV     A,R1
+0042 2401              ADD     A,#01H
+0044 F9                MOV     R1,A
+0045 EA                MOV     A,R2
+0046 3400              ADDC    A,#00H
+0048 FA                MOV     R2,A
+0049 120000      E     LCALL   ?C?CLDPTR
+004C FF                MOV     R7,A
+004D 900000      R     MOV     DPTR,#source_SHORTADR+01H
+0050 EF                MOV     A,R7
+0051 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 219
+0052 22                RET     
+             ; FUNCTION _zigbee_source_shortadr (END)
+
+             ; FUNCTION _zigbee_source_longadr (BEGIN)
+                                           ; SOURCE LINE # 222
+0000 900000      R     MOV     DPTR,#longadr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 225
+0006 900000      R     MOV     DPTR,#i
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 20  
+
+0009 E4                CLR     A
+000A F0                MOVX    @DPTR,A
+000B         ?C0036:
+000B 900000      R     MOV     DPTR,#i
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 C3                CLR     C
+0012 9408              SUBB    A,#08H
+0014 504F              JNC     ?C0039
+                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 227
+0016 900000      R     MOV     DPTR,#i
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 2405              ADD     A,#05H
+001E FF                MOV     R7,A
+001F 900000      R     MOV     DPTR,#longadr
+0022 120000      E     LCALL   ?C?PLDXDATA
+0025 900000      R     MOV     DPTR,#i
+0028 E0                MOVX    A,@DPTR
+0029 FE                MOV     R6,A
+002A E9                MOV     A,R1
+002B 2E                ADD     A,R6
+002C F9                MOV     R1,A
+002D E4                CLR     A
+002E 3A                ADDC    A,R2
+002F FA                MOV     R2,A
+0030 120000      E     LCALL   ?C?CLDPTR
+0033 FD                MOV     R5,A
+0034 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 228
+0037 900000      R     MOV     DPTR,#longadr
+003A 120000      E     LCALL   ?C?PLDXDATA
+003D 900000      R     MOV     DPTR,#i
+0040 E0                MOVX    A,@DPTR
+0041 FF                MOV     R7,A
+0042 E9                MOV     A,R1
+0043 2F                ADD     A,R7
+0044 F9                MOV     R1,A
+0045 E4                CLR     A
+0046 3A                ADDC    A,R2
+0047 FA                MOV     R2,A
+0048 120000      E     LCALL   ?C?CLDPTR
+004B FF                MOV     R7,A
+004C 900000      R     MOV     DPTR,#i
+004F E0                MOVX    A,@DPTR
+0050 FE                MOV     R6,A
+0051 7400        R     MOV     A,#LOW source_LONGADR
+0053 2E                ADD     A,R6
+0054 F582              MOV     DPL,A
+0056 E4                CLR     A
+0057 3400        R     ADDC    A,#HIGH source_LONGADR
+0059 F583              MOV     DPH,A
+005B EF                MOV     A,R7
+005C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 229
+005D 900000      R     MOV     DPTR,#i
+0060 E0                MOVX    A,@DPTR
+0061 04                INC     A
+0062 F0                MOVX    @DPTR,A
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 21  
+
+0063 80A6              SJMP    ?C0036
+                                           ; SOURCE LINE # 230
+0065         ?C0039:
+0065 22                RET     
+             ; FUNCTION _zigbee_source_longadr (END)
+
+             ; FUNCTION _zigbee_destination_PANid (BEGIN)
+                                           ; SOURCE LINE # 233
+0000 900000      R     MOV     DPTR,#PANid
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 234
+                                           ; SOURCE LINE # 235
+0006 900000      R     MOV     DPTR,#PANid
+0009 120000      E     LCALL   ?C?PLDXDATA
+000C 120000      E     LCALL   ?C?CLDPTR
+000F FF                MOV     R7,A
+0010 900000      R     MOV     DPTR,#destination_PANID
+0013 EF                MOV     A,R7
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 236
+0015 900000      R     MOV     DPTR,#PANid
+0018 120000      E     LCALL   ?C?PLDXDATA
+001B E9                MOV     A,R1
+001C 2401              ADD     A,#01H
+001E F9                MOV     R1,A
+001F EA                MOV     A,R2
+0020 3400              ADDC    A,#00H
+0022 FA                MOV     R2,A
+0023 120000      E     LCALL   ?C?CLDPTR
+0026 FF                MOV     R7,A
+0027 900000      R     MOV     DPTR,#destination_PANID+01H
+002A EF                MOV     A,R7
+002B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 237
+002C 22                RET     
+             ; FUNCTION _zigbee_destination_PANid (END)
+
+             ; FUNCTION _zigbee_destination_shortadr (BEGIN)
+                                           ; SOURCE LINE # 240
+0000 900000      R     MOV     DPTR,#shortadr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 241
+                                           ; SOURCE LINE # 242
+0006 900000      R     MOV     DPTR,#shortadr
+0009 120000      E     LCALL   ?C?PLDXDATA
+000C 120000      E     LCALL   ?C?CLDPTR
+000F FF                MOV     R7,A
+0010 900000      R     MOV     DPTR,#destination_SHORTADR
+0013 EF                MOV     A,R7
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 243
+0015 900000      R     MOV     DPTR,#shortadr
+0018 120000      E     LCALL   ?C?PLDXDATA
+001B E9                MOV     A,R1
+001C 2401              ADD     A,#01H
+001E F9                MOV     R1,A
+001F EA                MOV     A,R2
+0020 3400              ADDC    A,#00H
+0022 FA                MOV     R2,A
+0023 120000      E     LCALL   ?C?CLDPTR
+0026 FF                MOV     R7,A
+0027 900000      R     MOV     DPTR,#destination_SHORTADR+01H
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 22  
+
+002A EF                MOV     A,R7
+002B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 244
+002C 22                RET     
+             ; FUNCTION _zigbee_destination_shortadr (END)
+
+             ; FUNCTION _zigbee_destination_longadr (BEGIN)
+                                           ; SOURCE LINE # 247
+0000 900000      R     MOV     DPTR,#longadr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 250
+0006 900000      R     MOV     DPTR,#i
+0009 E4                CLR     A
+000A F0                MOVX    @DPTR,A
+000B         ?C0042:
+000B 900000      R     MOV     DPTR,#i
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 C3                CLR     C
+0012 9408              SUBB    A,#08H
+0014 502E              JNC     ?C0045
+                                           ; SOURCE LINE # 251
+                                           ; SOURCE LINE # 252
+0016 900000      R     MOV     DPTR,#longadr
+0019 120000      E     LCALL   ?C?PLDXDATA
+001C 900000      R     MOV     DPTR,#i
+001F E0                MOVX    A,@DPTR
+0020 FF                MOV     R7,A
+0021 E9                MOV     A,R1
+0022 2F                ADD     A,R7
+0023 F9                MOV     R1,A
+0024 E4                CLR     A
+0025 3A                ADDC    A,R2
+0026 FA                MOV     R2,A
+0027 120000      E     LCALL   ?C?CLDPTR
+002A FF                MOV     R7,A
+002B 900000      R     MOV     DPTR,#i
+002E E0                MOVX    A,@DPTR
+002F FE                MOV     R6,A
+0030 7400        R     MOV     A,#LOW destination_LONGADR
+0032 2E                ADD     A,R6
+0033 F582              MOV     DPL,A
+0035 E4                CLR     A
+0036 3400        R     ADDC    A,#HIGH destination_LONGADR
+0038 F583              MOV     DPH,A
+003A EF                MOV     A,R7
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 253
+003C 900000      R     MOV     DPTR,#i
+003F E0                MOVX    A,@DPTR
+0040 04                INC     A
+0041 F0                MOVX    @DPTR,A
+0042 80C7              SJMP    ?C0042
+                                           ; SOURCE LINE # 254
+0044         ?C0045:
+0044 22                RET     
+             ; FUNCTION _zigbee_destination_longadr (END)
+
+             ; FUNCTION zigbee_flush_RXfifo (BEGIN)
+                                           ; SOURCE LINE # 261
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 23  
+
+                                           ; SOURCE LINE # 262
+                                           ; SOURCE LINE # 264
+0000 7F0D              MOV     R7,#0DH
+0002 120000      E     LCALL   _zigbee_short_read
+0005 900000      R     MOV     DPTR,#temp
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 265
+000A 900000      R     MOV     DPTR,#temp
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 4401              ORL     A,#01H
+0012 FF                MOV     R7,A
+0013 900000      R     MOV     DPTR,#temp
+0016 EF                MOV     A,R7
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 266
+0018 900000      R     MOV     DPTR,#temp
+001B E0                MOVX    A,@DPTR
+001C FD                MOV     R5,A
+001D 7F0D              MOV     R7,#0DH
+001F 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 267
+0022 22                RET     
+             ; FUNCTION zigbee_flush_RXfifo (END)
+
+             ; FUNCTION zigbee_transmit_TXfifo (BEGIN)
+                                           ; SOURCE LINE # 270
+                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 273
+0000 7F1B              MOV     R7,#01BH
+0002 120000      E     LCALL   _zigbee_short_read
+0005 900000      R     MOV     DPTR,#temp
+0008 EF                MOV     A,R7
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 274
+000A 900000      R     MOV     DPTR,#temp
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 4401              ORL     A,#01H
+0012 FF                MOV     R7,A
+0013 900000      R     MOV     DPTR,#temp
+0016 EF                MOV     A,R7
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 275
+0018 900000      R     MOV     DPTR,#temp
+001B E0                MOVX    A,@DPTR
+001C FD                MOV     R5,A
+001D 7F1B              MOV     R7,#01BH
+001F 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 276
+0022 22                RET     
+             ; FUNCTION zigbee_transmit_TXfifo (END)
+
+             ; FUNCTION _zigbee_read_raw_RXfifo (BEGIN)
+                                           ; SOURCE LINE # 279
+0000 900000      R     MOV     DPTR,#RXfifo_ptr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 280
+                                           ; SOURCE LINE # 282
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 24  
+
+0006 7D04              MOV     R5,#04H
+0008 7F39              MOV     R7,#039H
+000A 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 283
+000D 7F00              MOV     R7,#00H
+000F 7E03              MOV     R6,#03H
+0011 120000      E     LCALL   _zigbee_long_read
+0014 900000      R     MOV     DPTR,#RXfifo_ptr
+0017 120000      E     LCALL   ?C?PLDXDATA
+001A EF                MOV     A,R7
+001B 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 284
+001E 900000      R     MOV     DPTR,#i
+0021 E4                CLR     A
+0022 F0                MOVX    @DPTR,A
+0023         ?C0048:
+0023 900000      R     MOV     DPTR,#RXfifo_ptr
+0026 120000      E     LCALL   ?C?PLDXDATA
+0029 120000      E     LCALL   ?C?CLDPTR
+002C FF                MOV     R7,A
+002D EF                MOV     A,R7
+002E 04                INC     A
+002F FF                MOV     R7,A
+0030 900000      R     MOV     DPTR,#RSSI_status
+0033 E0                MOVX    A,@DPTR
+0034 FE                MOV     R6,A
+0035 EF                MOV     A,R7
+0036 2E                ADD     A,R6
+0037 FF                MOV     R7,A
+0038 900000      R     MOV     DPTR,#i
+003B E0                MOVX    A,@DPTR
+003C FE                MOV     R6,A
+003D EE                MOV     A,R6
+003E C3                CLR     C
+003F 9F                SUBB    A,R7
+0040 503B              JNC     ?C0049
+                                           ; SOURCE LINE # 285
+                                           ; SOURCE LINE # 286
+0042 900000      R     MOV     DPTR,#i
+0045 E0                MOVX    A,@DPTR
+0046 FF                MOV     R7,A
+0047 7E00              MOV     R6,#00H
+0049 EF                MOV     A,R7
+004A 2401              ADD     A,#01H
+004C FF                MOV     R7,A
+004D EE                MOV     A,R6
+004E 3403              ADDC    A,#03H
+0050 FE                MOV     R6,A
+0051 120000      E     LCALL   _zigbee_long_read
+0054 900000      R     MOV     DPTR,#i
+0057 E0                MOVX    A,@DPTR
+0058 FE                MOV     R6,A
+0059 EE                MOV     A,R6
+005A FD                MOV     R5,A
+005B 7C00              MOV     R4,#00H
+005D ED                MOV     A,R5
+005E 2401              ADD     A,#01H
+0060 FD                MOV     R5,A
+0061 EC                MOV     A,R4
+0062 3400              ADDC    A,#00H
+0064 FC                MOV     R4,A
+0065 900000      R     MOV     DPTR,#RXfifo_ptr
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 25  
+
+0068 120000      E     LCALL   ?C?PLDXDATA
+006B E9                MOV     A,R1
+006C 2D                ADD     A,R5
+006D F9                MOV     R1,A
+006E EA                MOV     A,R2
+006F 3C                ADDC    A,R4
+0070 FA                MOV     R2,A
+0071 EF                MOV     A,R7
+0072 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 287
+0075 900000      R     MOV     DPTR,#i
+0078 E0                MOVX    A,@DPTR
+0079 04                INC     A
+007A F0                MOVX    @DPTR,A
+007B 80A6              SJMP    ?C0048
+007D         ?C0049:
+                                           ; SOURCE LINE # 288
+007D 7D00              MOV     R5,#00H
+007F 7F39              MOV     R7,#039H
+0081 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 289
+0084 900000      R     MOV     DPTR,#RXfifo_ptr
+0087 120000      E     LCALL   ?C?PLDXDATA
+008A 120000      E     LCALL   ?C?CLDPTR
+008D FF                MOV     R7,A
+                                           ; SOURCE LINE # 290
+008E         ?C0051:
+008E 22                RET     
+             ; FUNCTION _zigbee_read_raw_RXfifo (END)
+
+             ; FUNCTION _zigbee_write_raw_TXfifo (BEGIN)
+                                           ; SOURCE LINE # 293
+0000 900000      R     MOV     DPTR,#TXfifo_ptr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 296
+0006 900000      R     MOV     DPTR,#i
+0009 E4                CLR     A
+000A F0                MOVX    @DPTR,A
+000B         ?C0052:
+000B 900000      R     MOV     DPTR,#TXfifo_ptr
+000E 120000      E     LCALL   ?C?PLDXDATA
+0011 E9                MOV     A,R1
+0012 2401              ADD     A,#01H
+0014 F9                MOV     R1,A
+0015 EA                MOV     A,R2
+0016 3400              ADDC    A,#00H
+0018 FA                MOV     R2,A
+0019 120000      E     LCALL   ?C?CLDPTR
+001C FF                MOV     R7,A
+001D EF                MOV     A,R7
+001E 2402              ADD     A,#02H
+0020 FF                MOV     R7,A
+0021 900000      R     MOV     DPTR,#i
+0024 E0                MOVX    A,@DPTR
+0025 FE                MOV     R6,A
+0026 EE                MOV     A,R6
+0027 C3                CLR     C
+0028 9F                SUBB    A,R7
+0029 5027              JNC     ?C0055
+                                           ; SOURCE LINE # 297
+                                           ; SOURCE LINE # 298
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 26  
+
+002B 900000      R     MOV     DPTR,#i
+002E E0                MOVX    A,@DPTR
+002F FF                MOV     R7,A
+0030 7E00              MOV     R6,#00H
+0032 900000      R     MOV     DPTR,#TXfifo_ptr
+0035 120000      E     LCALL   ?C?PLDXDATA
+0038 900000      R     MOV     DPTR,#i
+003B E0                MOVX    A,@DPTR
+003C FD                MOV     R5,A
+003D E9                MOV     A,R1
+003E 2D                ADD     A,R5
+003F F9                MOV     R1,A
+0040 E4                CLR     A
+0041 3A                ADDC    A,R2
+0042 FA                MOV     R2,A
+0043 120000      E     LCALL   ?C?CLDPTR
+0046 FD                MOV     R5,A
+0047 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 299
+004A 900000      R     MOV     DPTR,#i
+004D E0                MOVX    A,@DPTR
+004E 04                INC     A
+004F F0                MOVX    @DPTR,A
+0050 80B9              SJMP    ?C0052
+                                           ; SOURCE LINE # 300
+0052         ?C0055:
+0052 22                RET     
+             ; FUNCTION _zigbee_write_raw_TXfifo (END)
+
+             ; FUNCTION _zigbee_read_payload_RXfifo (BEGIN)
+                                           ; SOURCE LINE # 304
+0000 900000      R     MOV     DPTR,#RXfifo_ptr
+0003 120000      E     LCALL   ?C?PSTXDATA
+                                           ; SOURCE LINE # 305
+                                           ; SOURCE LINE # 307
+0006 7D04              MOV     R5,#04H
+0008 7F39              MOV     R7,#039H
+000A 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 308
+000D 7F00              MOV     R7,#00H
+000F 7E03              MOV     R6,#03H
+0011 120000      E     LCALL   _zigbee_long_read
+0014 900000      R     MOV     DPTR,#length
+0017 EF                MOV     A,R7
+0018 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 309
+0019 900000      R     MOV     DPTR,#length
+001C E0                MOVX    A,@DPTR
+001D 24F7              ADD     A,#0F7H
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 310
+0020 900000      R     MOV     DPTR,#i
+0023 E4                CLR     A
+0024 F0                MOVX    @DPTR,A
+0025         ?C0056:
+0025 900000      R     MOV     DPTR,#length
+0028 E0                MOVX    A,@DPTR
+0029 FF                MOV     R7,A
+002A 900000      R     MOV     DPTR,#i
+002D E0                MOVX    A,@DPTR
+002E FE                MOV     R6,A
+002F EE                MOV     A,R6
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 27  
+
+0030 C3                CLR     C
+0031 9F                SUBB    A,R7
+0032 502F              JNC     ?C0057
+                                           ; SOURCE LINE # 311
+                                           ; SOURCE LINE # 312
+0034 900000      R     MOV     DPTR,#i
+0037 E0                MOVX    A,@DPTR
+0038 FF                MOV     R7,A
+0039 7E00              MOV     R6,#00H
+003B EF                MOV     A,R7
+003C 2408              ADD     A,#08H
+003E FF                MOV     R7,A
+003F EE                MOV     A,R6
+0040 3403              ADDC    A,#03H
+0042 FE                MOV     R6,A
+0043 120000      E     LCALL   _zigbee_long_read
+0046 900000      R     MOV     DPTR,#RXfifo_ptr
+0049 120000      E     LCALL   ?C?PLDXDATA
+004C 900000      R     MOV     DPTR,#i
+004F E0                MOVX    A,@DPTR
+0050 FE                MOV     R6,A
+0051 E9                MOV     A,R1
+0052 2E                ADD     A,R6
+0053 F9                MOV     R1,A
+0054 E4                CLR     A
+0055 3A                ADDC    A,R2
+0056 FA                MOV     R2,A
+0057 EF                MOV     A,R7
+0058 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 313
+005B 900000      R     MOV     DPTR,#i
+005E E0                MOVX    A,@DPTR
+005F 04                INC     A
+0060 F0                MOVX    @DPTR,A
+0061 80C2              SJMP    ?C0056
+0063         ?C0057:
+                                           ; SOURCE LINE # 314
+0063 7D00              MOV     R5,#00H
+0065 7F39              MOV     R7,#039H
+0067 120000      E     LCALL   _zigbee_short_write
+                                           ; SOURCE LINE # 315
+006A 900000      R     MOV     DPTR,#length
+006D E0                MOVX    A,@DPTR
+006E FF                MOV     R7,A
+                                           ; SOURCE LINE # 316
+006F         ?C0059:
+006F 22                RET     
+             ; FUNCTION _zigbee_read_payload_RXfifo (END)
+
+             ; FUNCTION _zigbee_write_payload_TXfifo (BEGIN)
+                                           ; SOURCE LINE # 320
+0000 900000      R     MOV     DPTR,#TXfifo_ptr
+0003 120000      E     LCALL   ?C?PSTXDATA
+0006 900000      R     MOV     DPTR,#length
+0009 ED                MOV     A,R5
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 324
+000B 7D07              MOV     R5,#07H
+000D 7F00              MOV     R7,#00H
+000F 7E00              MOV     R6,#00H
+0011 120000      E     LCALL   _zigbee_long_write
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 28  
+
+                                           ; SOURCE LINE # 325
+0014 900000      R     MOV     DPTR,#length
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+0019 EF                MOV     A,R7
+001A 2407              ADD     A,#07H
+001C FD                MOV     R5,A
+001D 7F01              MOV     R7,#01H
+001F 7E00              MOV     R6,#00H
+0021 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 327
+0024 7D01              MOV     R5,#01H
+0026 7F02              MOV     R7,#02H
+0028 7E00              MOV     R6,#00H
+002A 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 328
+002D 7D08              MOV     R5,#08H
+002F 7F03              MOV     R7,#03H
+0031 7E00              MOV     R6,#00H
+0033 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 329
+0036 900000      R     MOV     DPTR,#sequence_number
+0039 E0                MOVX    A,@DPTR
+003A FD                MOV     R5,A
+003B 7F04              MOV     R7,#04H
+003D 7E00              MOV     R6,#00H
+003F 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 330
+0042 900000      R     MOV     DPTR,#destination_PANID
+0045 E0                MOVX    A,@DPTR
+0046 FD                MOV     R5,A
+0047 7F05              MOV     R7,#05H
+0049 7E00              MOV     R6,#00H
+004B 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 331
+004E 900000      R     MOV     DPTR,#destination_PANID+01H
+0051 E0                MOVX    A,@DPTR
+0052 FD                MOV     R5,A
+0053 7F06              MOV     R7,#06H
+0055 7E00              MOV     R6,#00H
+0057 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 332
+005A 900000      R     MOV     DPTR,#destination_SHORTADR
+005D E0                MOVX    A,@DPTR
+005E FD                MOV     R5,A
+005F 7F07              MOV     R7,#07H
+0061 7E00              MOV     R6,#00H
+0063 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 333
+0066 900000      R     MOV     DPTR,#destination_SHORTADR+01H
+0069 E0                MOVX    A,@DPTR
+006A FD                MOV     R5,A
+006B 7F08              MOV     R7,#08H
+006D 7E00              MOV     R6,#00H
+006F 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 335
+0072 900000      R     MOV     DPTR,#i
+0075 E4                CLR     A
+0076 F0                MOVX    @DPTR,A
+0077         ?C0060:
+0077 900000      R     MOV     DPTR,#length
+007A E0                MOVX    A,@DPTR
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 29  
+
+007B FF                MOV     R7,A
+007C 900000      R     MOV     DPTR,#i
+007F E0                MOVX    A,@DPTR
+0080 FE                MOV     R6,A
+0081 EE                MOV     A,R6
+0082 C3                CLR     C
+0083 9F                SUBB    A,R7
+0084 502B              JNC     ?C0061
+                                           ; SOURCE LINE # 336
+                                           ; SOURCE LINE # 337
+0086 900000      R     MOV     DPTR,#i
+0089 E0                MOVX    A,@DPTR
+008A FF                MOV     R7,A
+008B EF                MOV     A,R7
+008C 2409              ADD     A,#09H
+008E FF                MOV     R7,A
+008F 7E00              MOV     R6,#00H
+0091 900000      R     MOV     DPTR,#TXfifo_ptr
+0094 120000      E     LCALL   ?C?PLDXDATA
+0097 900000      R     MOV     DPTR,#i
+009A E0                MOVX    A,@DPTR
+009B FD                MOV     R5,A
+009C E9                MOV     A,R1
+009D 2D                ADD     A,R5
+009E F9                MOV     R1,A
+009F E4                CLR     A
+00A0 3A                ADDC    A,R2
+00A1 FA                MOV     R2,A
+00A2 120000      E     LCALL   ?C?CLDPTR
+00A5 FD                MOV     R5,A
+00A6 120000      E     LCALL   _zigbee_long_write
+                                           ; SOURCE LINE # 338
+00A9 900000      R     MOV     DPTR,#i
+00AC E0                MOVX    A,@DPTR
+00AD 04                INC     A
+00AE F0                MOVX    @DPTR,A
+00AF 80C6              SJMP    ?C0060
+00B1         ?C0061:
+                                           ; SOURCE LINE # 339
+00B1 900000      R     MOV     DPTR,#sequence_number
+00B4 E0                MOVX    A,@DPTR
+00B5 04                INC     A
+00B6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 340
+00B7 22                RET     
+             ; FUNCTION _zigbee_write_payload_TXfifo (END)
+
+             ; FUNCTION zigbee_status_IRQ (BEGIN)
+                                           ; SOURCE LINE # 347
+                                           ; SOURCE LINE # 348
+                                           ; SOURCE LINE # 349
+0000 7F31              MOV     R7,#031H
+0002 120000      E     LCALL   _zigbee_short_read
+                                           ; SOURCE LINE # 350
+0005         ?C0064:
+0005 22                RET     
+             ; FUNCTION zigbee_status_IRQ (END)
+
+             ; FUNCTION zigbee_status_TX (BEGIN)
+                                           ; SOURCE LINE # 353
+                                           ; SOURCE LINE # 354
+                                           ; SOURCE LINE # 355
+C51 COMPILER V9.51   ZIGBEE_DRIVER                                                         12/19/2013 21:53:04 PAGE 30  
+
+0000 7F24              MOV     R7,#024H
+0002 120000      E     LCALL   _zigbee_short_read
+                                           ; SOURCE LINE # 356
+0005         ?C0065:
+0005 22                RET     
+             ; FUNCTION zigbee_status_TX (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1960    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     26      52
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

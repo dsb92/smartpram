@@ -1,0 +1,1673 @@
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE FILTER_1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\Filter_1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\Filter_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1.lst) CD DB N
+                    -OIP OT(2,SIZE) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: Filter_1.c
+   3          * Version 2.20
+   4          *
+   5          * Description:
+   6          *  This file provides the API source code for the FILT component.
+   7          *
+   8          * Note:
+   9          *  
+  10          *******************************************************************************
+  11          * Copyright 2008-2013, Cypress Semiconductor Corporation.  All rights reserved.
+  12          * You may use this file only in accordance with the license, terms, conditions, 
+  13          * disclaimers, and limitations in the end user license agreement accompanying 
+  14          * the software package with which this file was provided.
+  15          ********************************************************************************/
+  16          
+  17          #include "Filter_1_PVT.h"
+  18          
+  19          
+  20          /*******************************************************************************
+  21          * FILT component internal variables.
+  22          *******************************************************************************/
+  23          
+  24          uint8 Filter_1_initVar = 0x0u;
+  25          
+  26          
+  27          /*******************************************************************************
+  28          * Function Name: Filter_1_Init
+  29          ********************************************************************************
+  30          *
+  31          * Summary:
+  32          *  Initialize component's parameters to the parameters set by user in the 
+  33          *  customizer of the component placed onto schematic. Usually called in 
+  34          *  Filter_1_Start().
+  35          *
+  36          * Parameters:  
+  37          *  void
+  38          *
+  39          * Return: 
+  40          *  void
+  41          *
+  42          *******************************************************************************/
+  43          void Filter_1_Init(void) 
+  44          {
+  45   1              /* Power on DFB before initializing the RAMs */
+  46   1          Filter_1_PM_ACT_CFG_REG |= Filter_1_PM_ACT_MSK;
+  47   1      
+  48   1          /* Turn off Run Bit */
+  49   1          Filter_1_CR_REG &= (uint8)~Filter_1_RUN_MASK;
+  50   1                      
+  51   1          /* Enable the DFB RAMS */
+  52   1          Filter_1_RAM_EN_REG = Filter_1_RAM_DIR_BUS;
+  53   1              
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 2   
+
+  54   1          /* Put DFB RAM on the bus */
+  55   1          Filter_1_RAM_DIR_REG = Filter_1_RAM_DIR_BUS;
+  56   1              
+  57   1          /* Write DFB RAMs */
+  58   1          /* Control Store RAMs */
+  59   1          (void)memcpy( Filter_1_CSA_RAM,
+  60   1              Filter_1_control, Filter_1_CSA_RAM_SIZE); 
+  61   1          (void)memcpy(Filter_1_CSB_RAM,
+  62   1              Filter_1_control, Filter_1_CSB_RAM_SIZE); 
+  63   1          /* CFSM RAM */
+  64   1          (void)memcpy(Filter_1_CFSM_RAM,
+  65   1              Filter_1_cfsm, Filter_1_CFSM_RAM_SIZE); 
+  66   1          /* Data RAMs */
+  67   1          (void)memcpy(Filter_1_DA_RAM,
+  68   1              Filter_1_data_a, Filter_1_DA_RAM_SIZE); 
+  69   1          (void)memcpy(Filter_1_DB_RAM,
+  70   1              Filter_1_data_b, Filter_1_DB_RAM_SIZE); 
+  71   1          /* ACU RAM */
+  72   1          (void)memcpy(Filter_1_ACU_RAM,
+  73   1              Filter_1_acu, Filter_1_ACU_RAM_SIZE); 
+  74   1      
+  75   1          /* Take DFB RAM off the bus */
+  76   1          Filter_1_RAM_DIR_REG = Filter_1_RAM_DIR_DFB;
+  77   1      
+  78   1          /* Set up interrupt and DMA events */
+  79   1          Filter_1_SetInterruptMode(Filter_1_INIT_INTERRUPT_MODE);
+  80   1          Filter_1_SetDMAMode(Filter_1_INIT_DMA_MODE);
+  81   1              
+  82   1          /* Clear any pending interrupts */
+  83   1          /* Bits [2..0] of this register are readonly. */
+  84   1          Filter_1_SR_REG = 0xf8u;   
+  85   1      }
+  86          
+  87          
+  88          /*******************************************************************************
+  89          * Function Name: Filter_1_Enable
+  90          ********************************************************************************
+  91          *  
+  92          * Summary: 
+  93          *  Enables the DFB run bit.
+  94          *
+  95          * Parameters:  
+  96          *  void
+  97          *
+  98          * Return: 
+  99          *  void
+ 100          *
+ 101          *******************************************************************************/
+ 102          void Filter_1_Enable(void) 
+ 103          {
+ 104   1          /* Power on DFB in Active mode */
+ 105   1          Filter_1_PM_ACT_CFG_REG |= Filter_1_PM_ACT_MSK;
+ 106   1              
+ 107   1          /* Power on DFB in Alternative Active mode */
+ 108   1          Filter_1_PM_STBY_CFG_REG |= Filter_1_PM_STBY_MSK;
+ 109   1      
+ 110   1          /* Turn on Run Bit */
+ 111   1          Filter_1_CR_REG |= Filter_1_RUN_MASK;
+ 112   1      }
+ 113          
+ 114          
+ 115          /*******************************************************************************
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 3   
+
+ 116          * Function Name: Filter_1_Start
+ 117          ********************************************************************************
+ 118          *
+ 119          * Summary:
+ 120          *  This method does the prep work necessary to setup DFB.  This includes loading 
+ 121          *
+ 122          * Parameters:  
+ 123          *  void
+ 124          * 
+ 125          * Return: 
+ 126          *  void
+ 127          *
+ 128          * Global variables:
+ 129          *  Filter_1_initVar:  Used to check the initial configuration,
+ 130          *  modified when this function is called for the first time.
+ 131          *
+ 132          * Note: 
+ 133          *  Use Filter_1_InterruptConfig to control which events trigger 
+ 134          *  interrupts in the DFB. 
+ 135          *
+ 136          *******************************************************************************/
+ 137          void Filter_1_Start(void) 
+ 138          {
+ 139   1           /* If not Initialized then initialize all required hardware and software */
+ 140   1          if(Filter_1_initVar == 0u)
+ 141   1          {
+ 142   2              Filter_1_Init();
+ 143   2              Filter_1_initVar = 1u;
+ 144   2          }
+ 145   1      
+ 146   1          /* Enable the DFB block */
+ 147   1          Filter_1_Enable();
+ 148   1      }
+ 149          
+ 150          
+ 151          /*******************************************************************************
+ 152          * Function Name: Filter_1_Stop
+ 153          ********************************************************************************
+ 154          *
+ 155          * Summary:
+ 156          *  Turn off the run bit.  If DMA control is used to feed the channels, allow 
+ 157          *  arguments to turn one of the TD channels off. 
+ 158          *
+ 159          * Parameters:  
+ 160          *  void
+ 161          *
+ 162          * Return: 
+ 163          *  void
+ 164          *
+ 165          *******************************************************************************/
+ 166          void Filter_1_Stop(void) 
+ 167          {
+ 168   1          Filter_1_CR_REG &= (uint8)~(Filter_1_RUN_MASK);
+ 169   1      
+ 170   1          /* Power off DFB in Active mode */
+ 171   1          Filter_1_PM_ACT_CFG_REG &= (uint8)~Filter_1_PM_ACT_MSK;
+ 172   1          
+ 173   1          /* Power off DFB in Alternative Active mode */
+ 174   1          Filter_1_PM_STBY_CFG_REG &= (uint8)~Filter_1_PM_STBY_MSK;
+ 175   1      }
+ 176          
+ 177          
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 4   
+
+ 178          /*******************************************************************************
+ 179          * Function Name: Filter_1_Read8
+ 180          ********************************************************************************
+ 181          *
+ 182          * Summary:
+ 183          *  Get the value in one of the DFB Output Holding Registers 
+ 184          *
+ 185          * Parameters:  
+ 186          *  channel:  Filter_1_CHANNEL_A or Filter_1_CHANNEL_B
+ 187          *            
+ 188          * Return: 
+ 189          *  The most significant 8 bits of the current output value sitting in the 
+ 190          *  selected channel's holding register or 0x00 for invalid channel numbers.
+ 191          *
+ 192          *******************************************************************************/
+ 193          uint8 Filter_1_Read8(uint8 channel) 
+ 194          {
+ 195   1          uint8 value;
+ 196   1      
+ 197   1          if (channel == Filter_1_CHANNEL_A)
+ 198   1          {
+ 199   2              value = Filter_1_HOLDAH_REG;
+ 200   2          }
+ 201   1          else if (channel == Filter_1_CHANNEL_B)
+ 202   1          {
+ 203   2              value = Filter_1_HOLDBH_REG;
+ 204   2          }
+ 205   1          else
+ 206   1          {
+ 207   2              value = 0x0u;
+ 208   2          }
+ 209   1          return value;
+ 210   1      }
+ 211          
+ 212          
+ 213          /*******************************************************************************
+ 214          * Function Name: Filter_1_Read16
+ 215          ********************************************************************************
+ 216          *
+ 217          * Summary:
+ 218          *  Get the value in one of the DFB Output Holding Registers 
+ 219          *
+ 220          * Parameters:  
+ 221          *  channel:  Filter_1_CHANNEL_A or Filter_1_CHANNEL_B
+ 222          *            
+ 223          * Return: 
+ 224          *  The most significant 16 bits of the current output value sitting in the 
+ 225          *  selected channel's holding register or 0x0000 for invalid channel numbers
+ 226          *
+ 227          * Note:
+ 228          *  Order of the read is important.  On the read of the high byte, the DFB clears
+ 229          *  the data ready bit.
+ 230          *
+ 231          *******************************************************************************/
+ 232          #if defined(__C51__) || defined(__CX51__) 
+ 233          
+ 234              uint16 Filter_1_Read16(uint8 channel) 
+ 235              {
+ 236   1              uint16 val;
+ 237   1          
+ 238   1              if (channel == Filter_1_CHANNEL_A)
+ 239   1              {        
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 5   
+
+ 240   2                  val = Filter_1_HOLDAM_REG;
+ 241   2                  val |= (uint16)(Filter_1_HOLDAH_REG) << 8u;
+ 242   2              }
+ 243   1              else if (channel == Filter_1_CHANNEL_B)
+ 244   1              {      
+ 245   2                  val = Filter_1_HOLDBM_REG;
+ 246   2                  val |= (uint16)Filter_1_HOLDBH_REG << 8u;
+ 247   2              }
+ 248   1              else
+ 249   1              {
+ 250   2                  val = 0x0u;
+ 251   2              }
+ 252   1              return val;
+ 253   1          }
+ 254          
+ 255          #else
+              
+                  uint16 Filter_1_Read16(uint8 channel) 
+                  {
+                      uint16 val;
+              
+                      if (channel == Filter_1_CHANNEL_A)
+                      {        
+                          val = Filter_1_HOLDA16_REG;
+                      }
+                      else if (channel == Filter_1_CHANNEL_B)
+                      {      
+                          val = Filter_1_HOLDB16_REG;
+                      }
+                      else
+                      {
+                          val = 0x0u;
+                      }
+                      return val;
+                  }
+              
+              #endif /* defined(__C51__) || defined(__CX51__) */
+ 277          
+ 278          
+ 279          /*******************************************************************************
+ 280          * Function Name: Filter_1_Read24
+ 281          ********************************************************************************
+ 282          *
+ 283          * Summary:
+ 284          *  Get the value in one of the DFB Output Holding Registers 
+ 285          *
+ 286          * Parameters:  
+ 287          *  channel:  Filter_1_CHANNEL_A or Filter_1_CHANNEL_B
+ 288          *            
+ 289          * Return: 
+ 290          *  The current 24-bit output value sitting in the selected channel's
+ 291          *  holding register or 0x00000000 for invalid channel numbers
+ 292          *
+ 293          * Note:
+ 294          *  Order of the read is important.  On the read of the high byte, the DFB clears
+ 295          *  the data ready bit.
+ 296          *
+ 297          *******************************************************************************/
+ 298          #if defined(__C51__) || defined(__CX51__)
+ 299          
+ 300              uint32 Filter_1_Read24(uint8 channel) 
+ 301              {
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 6   
+
+ 302   1              uint32 val;
+ 303   1          
+ 304   1              if (channel == Filter_1_CHANNEL_A)
+ 305   1              {        
+ 306   2                  val = Filter_1_HOLDA_REG;
+ 307   2                  val |= (uint32)(Filter_1_HOLDAM_REG) << 8u;
+ 308   2                  val |= (uint32)(Filter_1_HOLDAH_REG) << 16u;
+ 309   2                  
+ 310   2                  /* SignExtend */
+ 311   2                  if((val & Filter_1_SIGN_BIT) == Filter_1_SIGN_BIT)
+ 312   2                  {    
+ 313   3                                      val |= Filter_1_SIGN_BYTE;
+ 314   3                              }
+ 315   2              }
+ 316   1              else if (channel == Filter_1_CHANNEL_B)
+ 317   1              {      
+ 318   2                  val = Filter_1_HOLDB_REG;
+ 319   2                  val |= (uint32)Filter_1_HOLDBM_REG << 8u;
+ 320   2                  val |= (uint32)Filter_1_HOLDBH_REG << 16u;
+ 321   2                  
+ 322   2                  /* SignExtend */
+ 323   2                  if((val & Filter_1_SIGN_BIT) == Filter_1_SIGN_BIT)
+ 324   2                  {
+ 325   3                                      val |= Filter_1_SIGN_BYTE;
+ 326   3                              }
+ 327   2              }
+ 328   1              else
+ 329   1              {
+ 330   2                  val = 0x0u;
+ 331   2              }
+ 332   1              return val;
+ 333   1          }
+ 334          
+ 335          #else
+              
+                  uint32 Filter_1_Read24(uint8 channel) 
+                  {
+                      uint32 val;
+                       
+                      if (channel == Filter_1_CHANNEL_A)
+                      {        
+                          val = Filter_1_HOLDA24_REG;
+                      }
+                      else if (channel == Filter_1_CHANNEL_B)
+                      {      
+                          val = Filter_1_HOLDB24_REG;
+                      }
+                      else
+                      {
+                          val = 0x0u;
+                      }
+                      return val;
+                  }
+              
+              #endif /* defined(__C51__) || defined(__CX51__) */
+ 357          
+ 358          
+ 359          /*******************************************************************************
+ 360          * Function Name: Filter_1_Write8
+ 361          ********************************************************************************
+ 362          *
+ 363          * Summary:
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 7   
+
+ 364          *  Set the value in one of the DFB Input Staging Registers 
+ 365          *
+ 366          * Parameters:  
+ 367          *  channel:  Use either Filter_1_CHANNEL_A or 
+ 368          *            Filter_1_CHANNEL_B as arguments to the function.  
+ 369          *  sample:   The 8-bit, right justified input sample. 
+ 370          *
+ 371          * Return: 
+ 372          *  void
+ 373          *
+ 374          * Note:
+ 375          *  Order of the write is important.  On the load of the high byte, the DFB sets
+ 376          *  the input ready bit.
+ 377          *
+ 378          *******************************************************************************/
+ 379          void Filter_1_Write8(uint8 channel, uint8 sample) 
+ 380          {
+ 381   1          if (channel == Filter_1_CHANNEL_A)
+ 382   1          {
+ 383   2              Filter_1_STAGEAH_REG = sample;
+ 384   2          }
+ 385   1          else if (channel == Filter_1_CHANNEL_B)
+ 386   1          {
+ 387   2              Filter_1_STAGEBH_REG = sample;
+ 388   2          }
+ 389   1              else
+ 390   1              {
+ 391   2                      /* No value is loaded on bad channel input */
+ 392   2              }
+ 393   1      }
+ 394          
+ 395          
+ 396          /*******************************************************************************
+ 397          * Function Name: Filter_1_Write16
+ 398          ********************************************************************************
+ 399          *
+ 400          * Summary:
+ 401          *  Set the value in one of the DFB Input Staging Registers 
+ 402          *
+ 403          * Parameters:  
+ 404          *  channel:  Use either Filter_1_CHANNEL_A or 
+ 405          *            Filter_1_CHANNEL_B as arguments to the function.  
+ 406          *  sample:   The 16-bit, right justified input sample. 
+ 407          *
+ 408          * Return: 
+ 409          *  void
+ 410          *
+ 411          * Note:
+ 412          *  Order of the write is important.  On the load of the high byte, the DFB sets
+ 413          *  the input ready bit.
+ 414          *
+ 415          *******************************************************************************/
+ 416          #if defined(__C51__) || defined(__CX51__)
+ 417          
+ 418              void Filter_1_Write16(uint8 channel, uint16 sample) 
+ 419              {
+ 420   1              /* Write the STAGE MSB reg last as it signals a complete wrote to the 
+ 421   1                 DFB.*/
+ 422   1              if (channel == Filter_1_CHANNEL_A)
+ 423   1              {
+ 424   2                  Filter_1_STAGEAM_REG = (uint8)(sample);
+ 425   2                  Filter_1_STAGEAH_REG = (uint8)(sample >> 8u);
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 8   
+
+ 426   2              }
+ 427   1              else if (channel == Filter_1_CHANNEL_B)
+ 428   1              {
+ 429   2                  Filter_1_STAGEBM_REG = (uint8)(sample);
+ 430   2                  Filter_1_STAGEBH_REG = (uint8)(sample >> 8u);
+ 431   2              }
+ 432   1              else
+ 433   1                      {
+ 434   2                              /* No value is loaded on bad channel input */
+ 435   2                      }
+ 436   1          }
+ 437          
+ 438          #else
+              
+                  void Filter_1_Write16(uint8 channel, uint16 sample) 
+                  {
+                      if (channel == Filter_1_CHANNEL_A)
+                      {
+                          Filter_1_STAGEA16_REG = sample;
+                      }
+                      else if (channel == Filter_1_CHANNEL_B)
+                      {
+                          Filter_1_STAGEB16_REG = sample;
+                      }
+                      else
+                              {
+                                      /* No value is loaded on bad channel input */
+                              }
+                  }
+              
+              #endif /* defined(__C51__) || defined(__CX51__) */
+ 457          
+ 458          
+ 459          /*******************************************************************************
+ 460          * Function Name: Filter_1_Write24
+ 461          ********************************************************************************
+ 462          *
+ 463          * Summary:
+ 464          *  Set the value in one of the DFB Input Staging Registers 
+ 465          *
+ 466          * Parameters:  
+ 467          *  channel:  Use either Filter_1_CHANNEL_A or 
+ 468          *            Filter_1_CHANNEL_B as arguments to the function.  
+ 469          *  sample:   The 24-bit, right justified input sample inside of a uint32. 
+ 470          *
+ 471          * Return: 
+ 472          *  void
+ 473          *
+ 474          * Note:
+ 475          *  Order of the write is important.  On the load of the high byte, the DFB sets
+ 476          *  the input ready bit.
+ 477          *
+ 478          *******************************************************************************/
+ 479          #if defined(__C51__) || defined(__CX51__)
+ 480          
+ 481              void Filter_1_Write24(uint8 channel, uint32 sample) 
+ 482              {
+ 483   1              /* Write the STAGE LSB reg last as it signals a complete wrote to 
+ 484   1                 the DFB.*/
+ 485   1              if (channel == Filter_1_CHANNEL_A)
+ 486   1              {
+ 487   2                  Filter_1_STAGEA_REG  = (uint8)(sample);
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 9   
+
+ 488   2                  Filter_1_STAGEAM_REG = (uint8)(sample >> 8u);
+ 489   2                  Filter_1_STAGEAH_REG = (uint8)(sample >> 16u);
+ 490   2              }
+ 491   1              else if (channel == Filter_1_CHANNEL_B)
+ 492   1              {
+ 493   2                  Filter_1_STAGEB_REG = (uint8)(sample);
+ 494   2                  Filter_1_STAGEBM_REG = (uint8)(sample >> 8u);
+ 495   2                  Filter_1_STAGEBH_REG = (uint8)(sample >> 16u);
+ 496   2              }
+ 497   1              else
+ 498   1                      {
+ 499   2                              /* No value is loaded on bad channel input */
+ 500   2                      }
+ 501   1          }
+ 502          
+ 503          #else
+              
+                  void Filter_1_Write24(uint8 channel, uint32 sample) 
+                  {
+                      if (channel == Filter_1_CHANNEL_A)
+                      {
+                          Filter_1_STAGEA24_REG = sample;
+                      }
+                      else if (channel == Filter_1_CHANNEL_B)
+                      {
+                          Filter_1_STAGEB24_REG = sample;
+                      }
+                      else
+                              {
+                                      /* No value is loaded on bad channel input */
+                              }
+                  }
+              
+              #endif /* defined(__C51__) || defined(__CX51__) */
+ 522          
+ 523          
+ 524          /*******************************************************************************
+ 525          * Function Name: Filter_1_SetCoherency
+ 526          ********************************************************************************
+ 527          *
+ 528          * Summary:
+ 529          *  Sets the DFB coherency register with the user provided input 
+ 530          *
+ 531          * Parameters:  
+ 532          *  channel:  Filter_1_CHANNEL_A or Filter_1_CHANNEL_B
+ 533          *  byteSelect:  High byte, Middle byte or Low byte as the key coherency byte.
+ 534          *            
+ 535          * Return: 
+ 536          *  None.
+ 537          *
+ 538          *******************************************************************************/
+ 539          void Filter_1_SetCoherency(uint8 channel, uint8 byteSelect) 
+ 540          {
+ 541   1          if (channel == Filter_1_CHANNEL_A)
+ 542   1          {
+ 543   2              Filter_1_COHER_REG &= 
+ 544   2                      (uint8)(~(uint8)(Filter_1_STAGEA_COHER_MASK | Filter_1_HOLDA_COHER_MASK));
+ 545   2              Filter_1_COHER_REG |= byteSelect;
+ 546   2              Filter_1_COHER_REG |= (uint8)((uint8)byteSelect << 4u);
+ 547   2          }
+ 548   1          else if (channel == Filter_1_CHANNEL_B)
+ 549   1          {
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 10  
+
+ 550   2              Filter_1_COHER_REG &= 
+ 551   2                      (uint8)(~(uint8)(Filter_1_STAGEB_COHER_MASK | Filter_1_HOLDB_COHER_MASK));
+ 552   2              Filter_1_COHER_REG |= (uint8)((uint8)byteSelect << 2u);
+ 553   2              Filter_1_COHER_REG |= (uint8)((uint8)byteSelect << 6u);
+ 554   2          }
+ 555   1          else
+ 556   1          {
+ 557   2              /* Invalid channel value */
+ 558   2          }
+ 559   1      }
+ 560          
+ 561          /* [] END OF FILE */
+ 562          
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 11  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Filter_1_Init (BEGIN)
+                                           ; SOURCE LINE # 43
+                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 46
+0000 9043A6            MOV     DPTR,#043A6H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 4410              ORL     A,#010H
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 49
+000B 90C780            MOV     DPTR,#0C780H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 54FE              ANL     A,#0FEH
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 52
+0016 90C788            MOV     DPTR,#0C788H
+0019 743F              MOV     A,#03FH
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 55
+001C 90C78C            MOV     DPTR,#0C78CH
+001F 743F              MOV     A,#03FH
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 60
+0022 7BFF              MOV     R3,#0FFH
+0024 7A00        E     MOV     R2,#HIGH Filter_1_control
+0026 7900        E     MOV     R1,#LOW Filter_1_control
+0028 C003              PUSH    AR3
+002A C002              PUSH    AR2
+002C C001              PUSH    AR1
+002E 7B01              MOV     R3,#01H
+0030 7AC4              MOV     R2,#0C4H
+0032 7900              MOV     R1,#00H
+0034 A801              MOV     R0,AR1
+0036 AC02              MOV     R4,AR2
+0038 AD03              MOV     R5,AR3
+003A D001              POP     AR1
+003C D002              POP     AR2
+003E D003              POP     AR3
+0040 7E01              MOV     R6,#01H
+0042 7F00              MOV     R7,#00H
+0044 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 62
+0047 7BFF              MOV     R3,#0FFH
+0049 7A00        E     MOV     R2,#HIGH Filter_1_control
+004B 7900        E     MOV     R1,#LOW Filter_1_control
+004D C003              PUSH    AR3
+004F C002              PUSH    AR2
+0051 C001              PUSH    AR1
+0053 7B01              MOV     R3,#01H
+0055 7AC5              MOV     R2,#0C5H
+0057 7900              MOV     R1,#00H
+0059 A801              MOV     R0,AR1
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 12  
+
+005B AC02              MOV     R4,AR2
+005D AD03              MOV     R5,AR3
+005F D001              POP     AR1
+0061 D002              POP     AR2
+0063 D003              POP     AR3
+0065 7E01              MOV     R6,#01H
+0067 7F00              MOV     R7,#00H
+0069 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 65
+006C 7BFF              MOV     R3,#0FFH
+006E 7A00        E     MOV     R2,#HIGH Filter_1_cfsm
+0070 7900        E     MOV     R1,#LOW Filter_1_cfsm
+0072 C003              PUSH    AR3
+0074 C002              PUSH    AR2
+0076 C001              PUSH    AR1
+0078 7B01              MOV     R3,#01H
+007A 7AC6              MOV     R2,#0C6H
+007C 7900              MOV     R1,#00H
+007E A801              MOV     R0,AR1
+0080 AC02              MOV     R4,AR2
+0082 AD03              MOV     R5,AR3
+0084 D001              POP     AR1
+0086 D002              POP     AR2
+0088 D003              POP     AR3
+008A 7E01              MOV     R6,#01H
+008C 7F00              MOV     R7,#00H
+008E 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 68
+0091 7BFF              MOV     R3,#0FFH
+0093 7A00        E     MOV     R2,#HIGH Filter_1_data_a
+0095 7900        E     MOV     R1,#LOW Filter_1_data_a
+0097 C003              PUSH    AR3
+0099 C002              PUSH    AR2
+009B C001              PUSH    AR1
+009D 7B01              MOV     R3,#01H
+009F 7AC0              MOV     R2,#0C0H
+00A1 7900              MOV     R1,#00H
+00A3 A801              MOV     R0,AR1
+00A5 AC02              MOV     R4,AR2
+00A7 AD03              MOV     R5,AR3
+00A9 D001              POP     AR1
+00AB D002              POP     AR2
+00AD D003              POP     AR3
+00AF 7E02              MOV     R6,#02H
+00B1 7F00              MOV     R7,#00H
+00B3 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 70
+00B6 7BFF              MOV     R3,#0FFH
+00B8 7A00        E     MOV     R2,#HIGH Filter_1_data_b
+00BA 7900        E     MOV     R1,#LOW Filter_1_data_b
+00BC C003              PUSH    AR3
+00BE C002              PUSH    AR2
+00C0 C001              PUSH    AR1
+00C2 7B01              MOV     R3,#01H
+00C4 7AC2              MOV     R2,#0C2H
+00C6 7900              MOV     R1,#00H
+00C8 A801              MOV     R0,AR1
+00CA AC02              MOV     R4,AR2
+00CC AD03              MOV     R5,AR3
+00CE D001              POP     AR1
+00D0 D002              POP     AR2
+00D2 D003              POP     AR3
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 13  
+
+00D4 7E02              MOV     R6,#02H
+00D6 7F00              MOV     R7,#00H
+00D8 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 73
+00DB 7BFF              MOV     R3,#0FFH
+00DD 7A00        E     MOV     R2,#HIGH Filter_1_acu
+00DF 7900        E     MOV     R1,#LOW Filter_1_acu
+00E1 C003              PUSH    AR3
+00E3 C002              PUSH    AR2
+00E5 C001              PUSH    AR1
+00E7 7B01              MOV     R3,#01H
+00E9 7AC7              MOV     R2,#0C7H
+00EB 7900              MOV     R1,#00H
+00ED A801              MOV     R0,AR1
+00EF AC02              MOV     R4,AR2
+00F1 AD03              MOV     R5,AR3
+00F3 D001              POP     AR1
+00F5 D002              POP     AR2
+00F7 D003              POP     AR3
+00F9 7E00              MOV     R6,#00H
+00FB 7F40              MOV     R7,#040H
+00FD 120000      E     LCALL   ?C?COPYAMD
+                                           ; SOURCE LINE # 76
+0100 90C78C            MOV     DPTR,#0C78CH
+0103 E4                CLR     A
+0104 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 79
+0105 7F00              MOV     R7,#00H
+0107 120000      E     LCALL   _Filter_1_SetInterruptMode
+                                           ; SOURCE LINE # 80
+010A 7F01              MOV     R7,#01H
+010C 120000      E     LCALL   _Filter_1_SetDMAMode
+                                           ; SOURCE LINE # 84
+010F 90C784            MOV     DPTR,#0C784H
+0112 74F8              MOV     A,#0F8H
+0114 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 85
+0115 22                RET     
+             ; FUNCTION Filter_1_Init (END)
+
+             ; FUNCTION Filter_1_Enable (BEGIN)
+                                           ; SOURCE LINE # 102
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 105
+0000 9043A6            MOV     DPTR,#043A6H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 4410              ORL     A,#010H
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 108
+000B 9043B6            MOV     DPTR,#043B6H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 4410              ORL     A,#010H
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 111
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 14  
+
+0016 90C780            MOV     DPTR,#0C780H
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 4401              ORL     A,#01H
+001E FF                MOV     R7,A
+001F EF                MOV     A,R7
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 112
+0021 22                RET     
+             ; FUNCTION Filter_1_Enable (END)
+
+             ; FUNCTION Filter_1_Start (BEGIN)
+                                           ; SOURCE LINE # 137
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 140
+0000 900000      R     MOV     DPTR,#Filter_1_initVar
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 7009              JNZ     ?C0003
+                                           ; SOURCE LINE # 141
+                                           ; SOURCE LINE # 142
+0008 120000      R     LCALL   Filter_1_Init
+                                           ; SOURCE LINE # 143
+000B 900000      R     MOV     DPTR,#Filter_1_initVar
+000E 7401              MOV     A,#01H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 144
+0011         ?C0003:
+                                           ; SOURCE LINE # 147
+0011 120000      R     LCALL   Filter_1_Enable
+                                           ; SOURCE LINE # 148
+0014 22                RET     
+             ; FUNCTION Filter_1_Start (END)
+
+             ; FUNCTION Filter_1_Stop (BEGIN)
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+                                           ; SOURCE LINE # 168
+0000 90C780            MOV     DPTR,#0C780H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 54FE              ANL     A,#0FEH
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 171
+000B 9043A6            MOV     DPTR,#043A6H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 54EF              ANL     A,#0EFH
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 174
+0016 9043B6            MOV     DPTR,#043B6H
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 15  
+
+001C 54EF              ANL     A,#0EFH
+001E FF                MOV     R7,A
+001F EF                MOV     A,R7
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 175
+0021 22                RET     
+             ; FUNCTION Filter_1_Stop (END)
+
+             ; FUNCTION _Filter_1_Read8 (BEGIN)
+                                           ; SOURCE LINE # 193
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 194
+                                           ; SOURCE LINE # 197
+0005 900000      R     MOV     DPTR,#channel
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 700C              JNZ     ?C0006
+                                           ; SOURCE LINE # 198
+                                           ; SOURCE LINE # 199
+000D 90C7AA            MOV     DPTR,#0C7AAH
+0010 E0                MOVX    A,@DPTR
+0011 FF                MOV     R7,A
+0012 900000      R     MOV     DPTR,#value
+0015 EF                MOV     A,R7
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 200
+0017 801A              SJMP    ?C0007
+0019         ?C0006:
+                                           ; SOURCE LINE # 201
+0019 900000      R     MOV     DPTR,#channel
+001C E0                MOVX    A,@DPTR
+001D FF                MOV     R7,A
+001E EF                MOV     A,R7
+001F B4010C            CJNE    A,#01H,?C0008
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+0022 90C7AE            MOV     DPTR,#0C7AEH
+0025 E0                MOVX    A,@DPTR
+0026 FF                MOV     R7,A
+0027 900000      R     MOV     DPTR,#value
+002A EF                MOV     A,R7
+002B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 204
+002C 8005              SJMP    ?C0007
+002E         ?C0008:
+                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 207
+002E 900000      R     MOV     DPTR,#value
+0031 E4                CLR     A
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 208
+0033         ?C0007:
+                                           ; SOURCE LINE # 209
+0033 900000      R     MOV     DPTR,#value
+0036 E0                MOVX    A,@DPTR
+0037 FF                MOV     R7,A
+                                           ; SOURCE LINE # 210
+0038         ?C0010:
+0038 22                RET     
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 16  
+
+             ; FUNCTION _Filter_1_Read8 (END)
+
+             ; FUNCTION _Filter_1_Read16 (BEGIN)
+                                           ; SOURCE LINE # 234
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 235
+                                           ; SOURCE LINE # 238
+0005 900000      R     MOV     DPTR,#channel
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 7032              JNZ     ?C0011
+                                           ; SOURCE LINE # 239
+                                           ; SOURCE LINE # 240
+000D 90C7A9            MOV     DPTR,#0C7A9H
+0010 E0                MOVX    A,@DPTR
+0011 FF                MOV     R7,A
+0012 7E00              MOV     R6,#00H
+0014 900000      R     MOV     DPTR,#val
+0017 EE                MOV     A,R6
+0018 F0                MOVX    @DPTR,A
+0019 A3                INC     DPTR
+001A EF                MOV     A,R7
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+001C 900000      R     MOV     DPTR,#val
+001F E0                MOVX    A,@DPTR
+0020 FC                MOV     R4,A
+0021 A3                INC     DPTR
+0022 E0                MOVX    A,@DPTR
+0023 FD                MOV     R5,A
+0024 90C7AA            MOV     DPTR,#0C7AAH
+0027 E0                MOVX    A,@DPTR
+0028 FF                MOV     R7,A
+0029 7E00              MOV     R6,#00H
+002B EF                MOV     A,R7
+002C 7F00              MOV     R7,#00H
+002E FE                MOV     R6,A
+002F EC                MOV     A,R4
+0030 4E                ORL     A,R6
+0031 FE                MOV     R6,A
+0032 ED                MOV     A,R5
+0033 4F                ORL     A,R7
+0034 FF                MOV     R7,A
+0035 900000      R     MOV     DPTR,#val
+0038 EE                MOV     A,R6
+0039 F0                MOVX    @DPTR,A
+003A A3                INC     DPTR
+003B EF                MOV     A,R7
+003C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 242
+003D 8043              SJMP    ?C0012
+003F         ?C0011:
+                                           ; SOURCE LINE # 243
+003F 900000      R     MOV     DPTR,#channel
+0042 E0                MOVX    A,@DPTR
+0043 FF                MOV     R7,A
+0044 EF                MOV     A,R7
+0045 B40132            CJNE    A,#01H,?C0013
+                                           ; SOURCE LINE # 244
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 17  
+
+                                           ; SOURCE LINE # 245
+0048 90C7AD            MOV     DPTR,#0C7ADH
+004B E0                MOVX    A,@DPTR
+004C FF                MOV     R7,A
+004D 7E00              MOV     R6,#00H
+004F 900000      R     MOV     DPTR,#val
+0052 EE                MOV     A,R6
+0053 F0                MOVX    @DPTR,A
+0054 A3                INC     DPTR
+0055 EF                MOV     A,R7
+0056 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 246
+0057 900000      R     MOV     DPTR,#val
+005A E0                MOVX    A,@DPTR
+005B FC                MOV     R4,A
+005C A3                INC     DPTR
+005D E0                MOVX    A,@DPTR
+005E FD                MOV     R5,A
+005F 90C7AE            MOV     DPTR,#0C7AEH
+0062 E0                MOVX    A,@DPTR
+0063 FF                MOV     R7,A
+0064 7E00              MOV     R6,#00H
+0066 EF                MOV     A,R7
+0067 7F00              MOV     R7,#00H
+0069 FE                MOV     R6,A
+006A EC                MOV     A,R4
+006B 4E                ORL     A,R6
+006C FE                MOV     R6,A
+006D ED                MOV     A,R5
+006E 4F                ORL     A,R7
+006F FF                MOV     R7,A
+0070 900000      R     MOV     DPTR,#val
+0073 EE                MOV     A,R6
+0074 F0                MOVX    @DPTR,A
+0075 A3                INC     DPTR
+0076 EF                MOV     A,R7
+0077 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 247
+0078 8008              SJMP    ?C0012
+007A         ?C0013:
+                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 250
+007A 900000      R     MOV     DPTR,#val
+007D E4                CLR     A
+007E F0                MOVX    @DPTR,A
+007F A3                INC     DPTR
+0080 E4                CLR     A
+0081 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 251
+0082         ?C0012:
+                                           ; SOURCE LINE # 252
+0082 900000      R     MOV     DPTR,#val
+0085 E0                MOVX    A,@DPTR
+0086 FE                MOV     R6,A
+0087 A3                INC     DPTR
+0088 E0                MOVX    A,@DPTR
+0089 FF                MOV     R7,A
+                                           ; SOURCE LINE # 253
+008A         ?C0015:
+008A 22                RET     
+             ; FUNCTION _Filter_1_Read16 (END)
+
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 18  
+
+             ; FUNCTION _Filter_1_Read24 (BEGIN)
+                                           ; SOURCE LINE # 300
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 301
+                                           ; SOURCE LINE # 304
+0005 900000      R     MOV     DPTR,#channel
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 6003              JZ      $ + 5H
+000D 020000      R     LJMP    ?C0016
+                                           ; SOURCE LINE # 305
+                                           ; SOURCE LINE # 306
+0010 90C7A8            MOV     DPTR,#0C7A8H
+0013 E0                MOVX    A,@DPTR
+0014 FF                MOV     R7,A
+0015 E4                CLR     A
+0016 FC                MOV     R4,A
+0017 FD                MOV     R5,A
+0018 FE                MOV     R6,A
+0019 900000      R     MOV     DPTR,#val
+001C 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 307
+001F 900000      R     MOV     DPTR,#val
+0022 120000      E     LCALL   ?C?LLDXDATA
+0025 C004              PUSH    AR4
+0027 C005              PUSH    AR5
+0029 C006              PUSH    AR6
+002B C007              PUSH    AR7
+002D 90C7A9            MOV     DPTR,#0C7A9H
+0030 E0                MOVX    A,@DPTR
+0031 FF                MOV     R7,A
+0032 E4                CLR     A
+0033 FC                MOV     R4,A
+0034 FD                MOV     R5,A
+0035 FE                MOV     R6,A
+0036 7808              MOV     R0,#08H
+0038 120000      E     LCALL   ?C?LSHL
+003B A804              MOV     R0,AR4
+003D A905              MOV     R1,AR5
+003F AA06              MOV     R2,AR6
+0041 AB07              MOV     R3,AR7
+0043 D007              POP     AR7
+0045 D006              POP     AR6
+0047 D005              POP     AR5
+0049 D004              POP     AR4
+004B 120000      E     LCALL   ?C?LOR
+004E 900000      R     MOV     DPTR,#val
+0051 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 308
+0054 900000      R     MOV     DPTR,#val
+0057 120000      E     LCALL   ?C?LLDXDATA
+005A C004              PUSH    AR4
+005C C005              PUSH    AR5
+005E C006              PUSH    AR6
+0060 C007              PUSH    AR7
+0062 90C7AA            MOV     DPTR,#0C7AAH
+0065 E0                MOVX    A,@DPTR
+0066 FF                MOV     R7,A
+0067 E4                CLR     A
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 19  
+
+0068 FC                MOV     R4,A
+0069 FD                MOV     R5,A
+006A FE                MOV     R6,A
+006B 7810              MOV     R0,#010H
+006D 120000      E     LCALL   ?C?LSHL
+0070 A804              MOV     R0,AR4
+0072 A905              MOV     R1,AR5
+0074 AA06              MOV     R2,AR6
+0076 AB07              MOV     R3,AR7
+0078 D007              POP     AR7
+007A D006              POP     AR6
+007C D005              POP     AR5
+007E D004              POP     AR4
+0080 120000      E     LCALL   ?C?LOR
+0083 900000      R     MOV     DPTR,#val
+0086 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 311
+0089 900000      R     MOV     DPTR,#val
+008C 120000      E     LCALL   ?C?LLDXDATA
+008F EF                MOV     A,R7
+0090 5400              ANL     A,#00H
+0092 FF                MOV     R7,A
+0093 EE                MOV     A,R6
+0094 5400              ANL     A,#00H
+0096 FE                MOV     R6,A
+0097 ED                MOV     A,R5
+0098 5480              ANL     A,#080H
+009A FD                MOV     R5,A
+009B EC                MOV     A,R4
+009C 5400              ANL     A,#00H
+009E FC                MOV     R4,A
+009F 7B00              MOV     R3,#00H
+00A1 7A00              MOV     R2,#00H
+00A3 7980              MOV     R1,#080H
+00A5 7800              MOV     R0,#00H
+00A7 C3                CLR     C
+00A8 120000      E     LCALL   ?C?ULCMP
+00AB 6003              JZ      $ + 5H
+00AD 020000      R     LJMP    ?C0018
+                                           ; SOURCE LINE # 312
+                                           ; SOURCE LINE # 313
+00B0 900000      R     MOV     DPTR,#val
+00B3 120000      E     LCALL   ?C?LLDXDATA
+00B6 EF                MOV     A,R7
+00B7 4400              ORL     A,#00H
+00B9 FF                MOV     R7,A
+00BA EE                MOV     A,R6
+00BB 4400              ORL     A,#00H
+00BD FE                MOV     R6,A
+00BE ED                MOV     A,R5
+00BF 4400              ORL     A,#00H
+00C1 FD                MOV     R5,A
+00C2 EC                MOV     A,R4
+00C3 44FF              ORL     A,#0FFH
+00C5 FC                MOV     R4,A
+00C6 900000      R     MOV     DPTR,#val
+00C9 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 315
+00CC 020000      R     LJMP    ?C0018
+00CF         ?C0016:
+                                           ; SOURCE LINE # 316
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 20  
+
+00CF 900000      R     MOV     DPTR,#channel
+00D2 E0                MOVX    A,@DPTR
+00D3 FF                MOV     R7,A
+00D4 EF                MOV     A,R7
+00D5 6401              XRL     A,#01H
+00D7 6003              JZ      $ + 5H
+00D9 020000      R     LJMP    ?C0019
+                                           ; SOURCE LINE # 317
+                                           ; SOURCE LINE # 318
+00DC 90C7AC            MOV     DPTR,#0C7ACH
+00DF E0                MOVX    A,@DPTR
+00E0 FF                MOV     R7,A
+00E1 E4                CLR     A
+00E2 FC                MOV     R4,A
+00E3 FD                MOV     R5,A
+00E4 FE                MOV     R6,A
+00E5 900000      R     MOV     DPTR,#val
+00E8 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 319
+00EB 900000      R     MOV     DPTR,#val
+00EE 120000      E     LCALL   ?C?LLDXDATA
+00F1 C004              PUSH    AR4
+00F3 C005              PUSH    AR5
+00F5 C006              PUSH    AR6
+00F7 C007              PUSH    AR7
+00F9 90C7AD            MOV     DPTR,#0C7ADH
+00FC E0                MOVX    A,@DPTR
+00FD FF                MOV     R7,A
+00FE E4                CLR     A
+00FF FC                MOV     R4,A
+0100 FD                MOV     R5,A
+0101 FE                MOV     R6,A
+0102 7808              MOV     R0,#08H
+0104 120000      E     LCALL   ?C?LSHL
+0107 A804              MOV     R0,AR4
+0109 A905              MOV     R1,AR5
+010B AA06              MOV     R2,AR6
+010D AB07              MOV     R3,AR7
+010F D007              POP     AR7
+0111 D006              POP     AR6
+0113 D005              POP     AR5
+0115 D004              POP     AR4
+0117 120000      E     LCALL   ?C?LOR
+011A 900000      R     MOV     DPTR,#val
+011D 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 320
+0120 900000      R     MOV     DPTR,#val
+0123 120000      E     LCALL   ?C?LLDXDATA
+0126 C004              PUSH    AR4
+0128 C005              PUSH    AR5
+012A C006              PUSH    AR6
+012C C007              PUSH    AR7
+012E 90C7AE            MOV     DPTR,#0C7AEH
+0131 E0                MOVX    A,@DPTR
+0132 FF                MOV     R7,A
+0133 E4                CLR     A
+0134 FC                MOV     R4,A
+0135 FD                MOV     R5,A
+0136 FE                MOV     R6,A
+0137 7810              MOV     R0,#010H
+0139 120000      E     LCALL   ?C?LSHL
+013C A804              MOV     R0,AR4
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 21  
+
+013E A905              MOV     R1,AR5
+0140 AA06              MOV     R2,AR6
+0142 AB07              MOV     R3,AR7
+0144 D007              POP     AR7
+0146 D006              POP     AR6
+0148 D005              POP     AR5
+014A D004              POP     AR4
+014C 120000      E     LCALL   ?C?LOR
+014F 900000      R     MOV     DPTR,#val
+0152 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 323
+0155 900000      R     MOV     DPTR,#val
+0158 120000      E     LCALL   ?C?LLDXDATA
+015B EF                MOV     A,R7
+015C 5400              ANL     A,#00H
+015E FF                MOV     R7,A
+015F EE                MOV     A,R6
+0160 5400              ANL     A,#00H
+0162 FE                MOV     R6,A
+0163 ED                MOV     A,R5
+0164 5480              ANL     A,#080H
+0166 FD                MOV     R5,A
+0167 EC                MOV     A,R4
+0168 5400              ANL     A,#00H
+016A FC                MOV     R4,A
+016B 7B00              MOV     R3,#00H
+016D 7A00              MOV     R2,#00H
+016F 7980              MOV     R1,#080H
+0171 7800              MOV     R0,#00H
+0173 C3                CLR     C
+0174 120000      E     LCALL   ?C?ULCMP
+0177 702C              JNZ     ?C0018
+                                           ; SOURCE LINE # 324
+                                           ; SOURCE LINE # 325
+0179 900000      R     MOV     DPTR,#val
+017C 120000      E     LCALL   ?C?LLDXDATA
+017F EF                MOV     A,R7
+0180 4400              ORL     A,#00H
+0182 FF                MOV     R7,A
+0183 EE                MOV     A,R6
+0184 4400              ORL     A,#00H
+0186 FE                MOV     R6,A
+0187 ED                MOV     A,R5
+0188 4400              ORL     A,#00H
+018A FD                MOV     R5,A
+018B EC                MOV     A,R4
+018C 44FF              ORL     A,#0FFH
+018E FC                MOV     R4,A
+018F 900000      R     MOV     DPTR,#val
+0192 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 326
+                                           ; SOURCE LINE # 327
+0195 800E              SJMP    ?C0018
+0197         ?C0019:
+                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 330
+0197 7F00              MOV     R7,#00H
+0199 7E00              MOV     R6,#00H
+019B 7D00              MOV     R5,#00H
+019D 7C00              MOV     R4,#00H
+019F 900000      R     MOV     DPTR,#val
+01A2 120000      E     LCALL   ?C?LSTXDATA
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 22  
+
+                                           ; SOURCE LINE # 331
+01A5         ?C0018:
+                                           ; SOURCE LINE # 332
+01A5 900000      R     MOV     DPTR,#val
+01A8 120000      E     LCALL   ?C?LLDXDATA
+                                           ; SOURCE LINE # 333
+01AB         ?C0022:
+01AB 22                RET     
+             ; FUNCTION _Filter_1_Read24 (END)
+
+             ; FUNCTION _Filter_1_Write8 (BEGIN)
+                                           ; SOURCE LINE # 379
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 900000      R     MOV     DPTR,#sample
+0008 ED                MOV     A,R5
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 380
+                                           ; SOURCE LINE # 381
+000A 900000      R     MOV     DPTR,#channel
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 700B              JNZ     ?C0023
+                                           ; SOURCE LINE # 382
+                                           ; SOURCE LINE # 383
+0012 900000      R     MOV     DPTR,#sample
+0015 E0                MOVX    A,@DPTR
+0016 FF                MOV     R7,A
+0017 90C7A2            MOV     DPTR,#0C7A2H
+001A EF                MOV     A,R7
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 384
+001C 22                RET     
+001D         ?C0023:
+                                           ; SOURCE LINE # 385
+001D 900000      R     MOV     DPTR,#channel
+0020 E0                MOVX    A,@DPTR
+0021 FF                MOV     R7,A
+0022 EF                MOV     A,R7
+0023 B4010A            CJNE    A,#01H,?C0027
+                                           ; SOURCE LINE # 386
+                                           ; SOURCE LINE # 387
+0026 900000      R     MOV     DPTR,#sample
+0029 E0                MOVX    A,@DPTR
+002A FF                MOV     R7,A
+002B 90C7A6            MOV     DPTR,#0C7A6H
+002E EF                MOV     A,R7
+002F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 388
+                                           ; SOURCE LINE # 390
+                                           ; SOURCE LINE # 392
+                                           ; SOURCE LINE # 393
+0030         ?C0027:
+0030 22                RET     
+             ; FUNCTION _Filter_1_Write8 (END)
+
+             ; FUNCTION _Filter_1_Write16 (BEGIN)
+                                           ; SOURCE LINE # 418
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 23  
+
+0004 F0                MOVX    @DPTR,A
+0005 900000      R     MOV     DPTR,#sample
+0008 EC                MOV     A,R4
+0009 F0                MOVX    @DPTR,A
+000A A3                INC     DPTR
+000B ED                MOV     A,R5
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 419
+                                           ; SOURCE LINE # 422
+000D 900000      R     MOV     DPTR,#channel
+0010 E0                MOVX    A,@DPTR
+0011 FF                MOV     R7,A
+0012 EF                MOV     A,R7
+0013 701F              JNZ     ?C0028
+                                           ; SOURCE LINE # 423
+                                           ; SOURCE LINE # 424
+0015 900000      R     MOV     DPTR,#sample
+0018 E0                MOVX    A,@DPTR
+0019 FE                MOV     R6,A
+001A A3                INC     DPTR
+001B E0                MOVX    A,@DPTR
+001C FF                MOV     R7,A
+001D 90C7A1            MOV     DPTR,#0C7A1H
+0020 EF                MOV     A,R7
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 425
+0022 900000      R     MOV     DPTR,#sample
+0025 E0                MOVX    A,@DPTR
+0026 FE                MOV     R6,A
+0027 A3                INC     DPTR
+0028 E0                MOVX    A,@DPTR
+0029 FF                MOV     R7,A
+002A EE                MOV     A,R6
+002B FF                MOV     R7,A
+002C 7E00              MOV     R6,#00H
+002E 90C7A2            MOV     DPTR,#0C7A2H
+0031 EF                MOV     A,R7
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 426
+0033 22                RET     
+0034         ?C0028:
+                                           ; SOURCE LINE # 427
+0034 900000      R     MOV     DPTR,#channel
+0037 E0                MOVX    A,@DPTR
+0038 FF                MOV     R7,A
+0039 EF                MOV     A,R7
+003A B4011E            CJNE    A,#01H,?C0032
+                                           ; SOURCE LINE # 428
+                                           ; SOURCE LINE # 429
+003D 900000      R     MOV     DPTR,#sample
+0040 E0                MOVX    A,@DPTR
+0041 FE                MOV     R6,A
+0042 A3                INC     DPTR
+0043 E0                MOVX    A,@DPTR
+0044 FF                MOV     R7,A
+0045 90C7A5            MOV     DPTR,#0C7A5H
+0048 EF                MOV     A,R7
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 430
+004A 900000      R     MOV     DPTR,#sample
+004D E0                MOVX    A,@DPTR
+004E FE                MOV     R6,A
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 24  
+
+004F A3                INC     DPTR
+0050 E0                MOVX    A,@DPTR
+0051 FF                MOV     R7,A
+0052 EE                MOV     A,R6
+0053 FF                MOV     R7,A
+0054 7E00              MOV     R6,#00H
+0056 90C7A6            MOV     DPTR,#0C7A6H
+0059 EF                MOV     A,R7
+005A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 431
+                                           ; SOURCE LINE # 433
+                                           ; SOURCE LINE # 435
+                                           ; SOURCE LINE # 436
+005B         ?C0032:
+005B 22                RET     
+             ; FUNCTION _Filter_1_Write16 (END)
+
+             ; FUNCTION _Filter_1_Write24 (BEGIN)
+                                           ; SOURCE LINE # 481
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 482
+                                           ; SOURCE LINE # 485
+0005 900000      R     MOV     DPTR,#channel
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 702C              JNZ     ?C0033
+                                           ; SOURCE LINE # 486
+                                           ; SOURCE LINE # 487
+000D 900000      R     MOV     DPTR,#sample
+0010 120000      E     LCALL   ?C?LLDXDATA
+0013 90C7A0            MOV     DPTR,#0C7A0H
+0016 EF                MOV     A,R7
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 488
+0018 900000      R     MOV     DPTR,#sample
+001B 120000      E     LCALL   ?C?LLDXDATA
+001E 7808              MOV     R0,#08H
+0020 120000      E     LCALL   ?C?ULSHR
+0023 90C7A1            MOV     DPTR,#0C7A1H
+0026 EF                MOV     A,R7
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 489
+0028 900000      R     MOV     DPTR,#sample
+002B 120000      E     LCALL   ?C?LLDXDATA
+002E 7810              MOV     R0,#010H
+0030 120000      E     LCALL   ?C?ULSHR
+0033 90C7A2            MOV     DPTR,#0C7A2H
+0036 EF                MOV     A,R7
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 490
+0038 22                RET     
+0039         ?C0033:
+                                           ; SOURCE LINE # 491
+0039 900000      R     MOV     DPTR,#channel
+003C E0                MOVX    A,@DPTR
+003D FF                MOV     R7,A
+003E EF                MOV     A,R7
+003F 6401              XRL     A,#01H
+0041 702B              JNZ     ?C0037
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 25  
+
+                                           ; SOURCE LINE # 492
+                                           ; SOURCE LINE # 493
+0043 900000      R     MOV     DPTR,#sample
+0046 120000      E     LCALL   ?C?LLDXDATA
+0049 90C7A4            MOV     DPTR,#0C7A4H
+004C EF                MOV     A,R7
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 494
+004E 900000      R     MOV     DPTR,#sample
+0051 120000      E     LCALL   ?C?LLDXDATA
+0054 7808              MOV     R0,#08H
+0056 120000      E     LCALL   ?C?ULSHR
+0059 90C7A5            MOV     DPTR,#0C7A5H
+005C EF                MOV     A,R7
+005D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 495
+005E 900000      R     MOV     DPTR,#sample
+0061 120000      E     LCALL   ?C?LLDXDATA
+0064 7810              MOV     R0,#010H
+0066 120000      E     LCALL   ?C?ULSHR
+0069 90C7A6            MOV     DPTR,#0C7A6H
+006C EF                MOV     A,R7
+006D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 496
+                                           ; SOURCE LINE # 498
+                                           ; SOURCE LINE # 500
+                                           ; SOURCE LINE # 501
+006E         ?C0037:
+006E 22                RET     
+             ; FUNCTION _Filter_1_Write24 (END)
+
+             ; FUNCTION _Filter_1_SetCoherency (BEGIN)
+                                           ; SOURCE LINE # 539
+0000 900000      R     MOV     DPTR,#channel
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 900000      R     MOV     DPTR,#byteSelect
+0008 ED                MOV     A,R5
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 540
+                                           ; SOURCE LINE # 541
+000A 900000      R     MOV     DPTR,#channel
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 703F              JNZ     ?C0038
+                                           ; SOURCE LINE # 542
+                                           ; SOURCE LINE # 544
+0012 90C7B0            MOV     DPTR,#0C7B0H
+0015 E0                MOVX    A,@DPTR
+0016 FF                MOV     R7,A
+0017 EF                MOV     A,R7
+0018 54CC              ANL     A,#0CCH
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 545
+001D 90C7B0            MOV     DPTR,#0C7B0H
+0020 C083              PUSH    DPH
+0022 C082              PUSH    DPL
+0024 E0                MOVX    A,@DPTR
+0025 FF                MOV     R7,A
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 26  
+
+0026 900000      R     MOV     DPTR,#byteSelect
+0029 E0                MOVX    A,@DPTR
+002A FE                MOV     R6,A
+002B EF                MOV     A,R7
+002C 4E                ORL     A,R6
+002D FF                MOV     R7,A
+002E D082              POP     DPL
+0030 D083              POP     DPH
+0032 EF                MOV     A,R7
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 546
+0034 90C7B0            MOV     DPTR,#0C7B0H
+0037 C083              PUSH    DPH
+0039 C082              PUSH    DPL
+003B E0                MOVX    A,@DPTR
+003C FF                MOV     R7,A
+003D 900000      R     MOV     DPTR,#byteSelect
+0040 E0                MOVX    A,@DPTR
+0041 FE                MOV     R6,A
+0042 EE                MOV     A,R6
+0043 C4                SWAP    A
+0044 54F0              ANL     A,#0F0H
+0046 FE                MOV     R6,A
+0047 EF                MOV     A,R7
+0048 4E                ORL     A,R6
+0049 FF                MOV     R7,A
+004A D082              POP     DPL
+004C D083              POP     DPH
+004E EF                MOV     A,R7
+004F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 547
+0050 22                RET     
+0051         ?C0038:
+                                           ; SOURCE LINE # 548
+0051 900000      R     MOV     DPTR,#channel
+0054 E0                MOVX    A,@DPTR
+0055 FF                MOV     R7,A
+0056 EF                MOV     A,R7
+0057 6401              XRL     A,#01H
+0059 7046              JNZ     ?C0042
+                                           ; SOURCE LINE # 549
+                                           ; SOURCE LINE # 551
+005B 90C7B0            MOV     DPTR,#0C7B0H
+005E E0                MOVX    A,@DPTR
+005F FF                MOV     R7,A
+0060 EF                MOV     A,R7
+0061 5433              ANL     A,#033H
+0063 FF                MOV     R7,A
+0064 EF                MOV     A,R7
+0065 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 552
+0066 90C7B0            MOV     DPTR,#0C7B0H
+0069 C083              PUSH    DPH
+006B C082              PUSH    DPL
+006D E0                MOVX    A,@DPTR
+006E FF                MOV     R7,A
+006F 900000      R     MOV     DPTR,#byteSelect
+0072 E0                MOVX    A,@DPTR
+0073 FE                MOV     R6,A
+0074 EE                MOV     A,R6
+0075 25E0              ADD     A,ACC
+0077 25E0              ADD     A,ACC
+C51 COMPILER V9.51   FILTER_1                                                              12/19/2013 21:53:09 PAGE 27  
+
+0079 FE                MOV     R6,A
+007A EF                MOV     A,R7
+007B 4E                ORL     A,R6
+007C FF                MOV     R7,A
+007D D082              POP     DPL
+007F D083              POP     DPH
+0081 EF                MOV     A,R7
+0082 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 553
+0083 90C7B0            MOV     DPTR,#0C7B0H
+0086 C083              PUSH    DPH
+0088 C082              PUSH    DPL
+008A E0                MOVX    A,@DPTR
+008B FF                MOV     R7,A
+008C 900000      R     MOV     DPTR,#byteSelect
+008F E0                MOVX    A,@DPTR
+0090 FE                MOV     R6,A
+0091 EE                MOV     A,R6
+0092 C4                SWAP    A
+0093 33                RLC     A
+0094 33                RLC     A
+0095 54C0              ANL     A,#0C0H
+0097 FE                MOV     R6,A
+0098 EF                MOV     A,R7
+0099 4E                ORL     A,R6
+009A FF                MOV     R7,A
+009B D082              POP     DPL
+009D D083              POP     DPH
+009F EF                MOV     A,R7
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 554
+                                           ; SOURCE LINE # 556
+                                           ; SOURCE LINE # 558
+                                           ; SOURCE LINE # 559
+00A1         ?C0042:
+00A1 22                RET     
+             ; FUNCTION _Filter_1_SetCoherency (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1405    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      1      22
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

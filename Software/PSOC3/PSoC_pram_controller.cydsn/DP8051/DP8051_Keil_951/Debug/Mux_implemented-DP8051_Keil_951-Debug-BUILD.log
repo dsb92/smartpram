@@ -1,0 +1,41 @@
+--------------- Build Started: 12/19/2013 17:45:44 Project: Mux_implemented, Configuration: DP8051 Keil 9.51 Debug ---------------
+The code generation step is up to date.
+c51.exe .\main.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\main.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\main.obj)
+c51.exe .\Functions.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Functions.lst) CD DB NOIP "OT(2, Size)" "INCDIR(., .\Generated_Source\PSoC3)" OJ(.\DP8051\DP8051_Keil_951\Debug\Functions.obj)
+LIBX51.exe TRANSFER '.\DP8051\DP8051_Keil_951\Debug\cyfitter_cfg.obj', '.\DP8051\DP8051_Keil_951\Debug\Signal_in.obj', '.\DP8051\DP8051_Keil_951\Debug\DAC_out.obj', '.\DP8051\DP8051_Keil_951\Debug\Clock_1.obj', '.\DP8051\DP8051_Keil_951\Debug\CyBootAsmKeil.obj', '.\DP8051\DP8051_Keil_951\Debug\CyDmac.obj', '.\DP8051\DP8051_Keil_951\Debug\CyFlash.obj', '.\DP8051\DP8051_Keil_951\Debug\CyLib.obj', '.\DP8051\DP8051_Keil_951\Debug\cymem.obj', '.\DP8051\DP8051_Keil_951\Debug\cyPm.obj', '.\DP8051\DP8051_Keil_951\Debug\CySpc.obj', '.\DP8051\DP8051_Keil_951\Debug\cyutils.obj', '.\DP8051\DP8051_Keil_951\Debug\KeilStart.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_INT.obj', '.\DP8051\DP8051_Keil_951\Debug\DMA_1_dma.obj', '.\DP8051\DP8051_Keil_951\Debug\VDAC8_1.obj', '.\DP8051\DP8051_Keil_951\Debug\VDAC8_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_theACLK.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_Ext_CP_Clk.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_RAM_Data.obj', '.\DP8051\DP8051_Keil_951\Debug\Filter_1_Coefficients.obj', '.\DP8051\DP8051_Keil_951\Debug\DMA_2_dma.obj', '.\DP8051\DP8051_Keil_951\Debug\Clock_2.obj', '.\DP8051\DP8051_Keil_951\Debug\Control_Reg_1.obj', '.\DP8051\DP8051_Keil_951\Debug\isr_1.obj', '.\DP8051\DP8051_Keil_951\Debug\isr_2.obj', '.\DP8051\DP8051_Keil_951\Debug\Opamp_1.obj', '.\DP8051\DP8051_Keil_951\Debug\Opamp_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\V_Ref.obj', '.\DP8051\DP8051_Keil_951\Debug\PGA_1.obj', '.\DP8051\DP8051_Keil_951\Debug\PGA_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\ADC_DelSig_1_IRQ.obj', '.\DP8051\DP8051_Keil_951\Debug\PWM_1.obj', '.\DP8051\DP8051_Keil_951\Debug\PWM_1_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\Mobile_motor.obj', '.\DP8051\DP8051_Keil_951\Debug\Cradle_motor.obj', '.\DP8051\DP8051_Keil_951\Debug\AMux_1.obj', '.\DP8051\DP8051_Keil_951\Debug\Temp_in.obj', '.\DP8051\DP8051_Keil_951\Debug\IRQ_Zigbee.obj', '.\DP8051\DP8051_Keil_951\Debug\MISO.obj', '.\DP8051\DP8051_Keil_951\Debug\nRESET.obj', '.\DP8051\DP8051_Keil_951\Debug\WAKE.obj', '.\DP8051\DP8051_Keil_951\Debug\CS.obj', '.\DP8051\DP8051_Keil_951\Debug\SCLK.obj', '.\DP8051\DP8051_Keil_951\Debug\MOSI.obj', '.\DP8051\DP8051_Keil_951\Debug\SPI.obj', '.\DP8051\DP8051_Keil_951\Debug\SPI_PM.obj', '.\DP8051\DP8051_Keil_951\Debug\SPI_INT.obj', '.\DP8051\DP8051_Keil_951\Debug\isr_Receive_Data.obj' TO '.\DP8051\DP8051_Keil_951\Debug\Mux_implemented.lib'
+LX51.exe '.\DP8051\DP8051_Keil_951\Debug\main.obj', '.\DP8051\DP8051_Keil_951\Debug\Functions.obj', '.\DP8051\DP8051_Keil_951\Debug\zigbee_driver.obj', '.\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.obj', '.\DP8051\DP8051_Keil_951\Debug\Mux_implemented.lib', 'C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\DP8051\DP8051_Keil_951\Debug\CyComponentLibrary.lib'  TO '.\DP8051\DP8051_Keil_951\Debug\Mux_implemented.omf' PR(.\DP8051\DP8051_Keil_951\Debug\Mux_implemented.map) IX CODE DW(16) RU CL(XDATA(X:0x0000-X:0x1FFF)) CL(CODE(C:0x0000-C:0xFFFF)) CL(CONST(C:0x0000-C:0xFFFF))
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _PWM_1_WRITECOMPARE1/PWM_1
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _PWM_1_WRITECOMPARE2/PWM_1
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    SPI_READTXSTATUS/SPI
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _ZIGBEE_SHORT_WRITE/ZIGBEE_SPI_PSOC3
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _SPI_WRITETXDATA/SPI
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    _ZIGBEE_SHORT_READ/ZIGBEE_SPI_PSOC3
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+*** WARNING L15: MULTIPLE CALL TO FUNCTION
+    NAME:    SPI_READRXDATA/SPI
+    CALLER1: ISR_ZIGBEE/MAIN
+    CALLER2: ?C_C51STARTUP
+Program Size: data=24.0 xdata=302 const=1683 code=14691
+OHx51.exe Mux_implemented.omf HEXFILE(Mux_implemented.ihx)
+c8051-elf-omf2elf.exe Mux_implemented.omf Mux_implemented.elf
+cyhextool -o .\DP8051\DP8051_Keil_951\Debug\Mux_implemented.hex -f .\DP8051\DP8051_Keil_951\Debug\Mux_implemented.ihx -prot .\Generated_Source\PSoC3\protect.hex -id 1E028069 -a EEPROM=90200000:800,PROGRAM=00000000:10000,CONFIG=80000000:2000,PROTECT=90400000:40 -meta 0301 -cunv 00004005 -wonv BC90ACAF -ecc .\Generated_Source\PSoC3\config.hex
+Flash used: 16374 of 65536 bytes (25,0 %).
+SRAM used: 302 of 8192 bytes (3,7 %).
+--------------- Build Succeeded: 12/19/2013 17:45:49 ---------------

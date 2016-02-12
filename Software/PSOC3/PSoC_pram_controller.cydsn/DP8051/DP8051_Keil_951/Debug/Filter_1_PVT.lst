@@ -1,0 +1,184 @@
+C51 COMPILER V9.51   FILTER_1_PVT                                                          12/19/2013 21:53:09 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE FILTER_1_PVT
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\Filter_1_PVT.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.lst)
+                    - CD DB NOIP OT(2,SIZE) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\Filter_1_PVT.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: Filter_1_PVT.c
+   3          * Version 2.20
+   4          *
+   5          * Description:
+   6          *  This file provides source code for FILT component internal functions.
+   7          *
+   8          * Note:
+   9          *  
+  10          *******************************************************************************
+  11          * Copyright 2008-2013, Cypress Semiconductor Corporation.  All rights reserved.
+  12          * You may use this file only in accordance with the license, terms, conditions, 
+  13          * disclaimers, and limitations in the end user license agreement accompanying 
+  14          * the software package with which this file was provided.
+  15          ********************************************************************************/
+  16          
+  17          #include "Filter_1_PVT.h"
+  18          
+  19          
+  20          /*******************************************************************************
+  21          * Function Name: Filter_1_SetInterruptMode
+  22          ********************************************************************************
+  23          *
+  24          * Summary:
+  25          *  Assign the events which will trigger a DFB interrupt to be triggered. 
+  26          *
+  27          * Parameters:  
+  28          *  events:  Bits [0:5] of events represent the events which will trigger DFB
+  29          *           interrupts.
+  30          *            Bit 0 - Output value ready in the holding register on channel A
+  31          *            Bit 1 - Output value ready in the holding register on channel B
+  32          *            Bit 2 - '1' written to Semaphore 0  - See Note
+  33          *            Bit 3 - '1' written to Semaphore 1  - See Note
+  34          *            Bit 4 - '1' written to Semaphore 2
+  35          *
+  36          * Return: 
+  37          *  void
+  38          *
+  39          * Note:
+  40          *  Semaphore 0 and Semaphore 1 should not be configured as both a DMA request 
+  41          *  and an interrupt event, because, after one clock cycle, the system 
+  42          *  automatically clears any semaphore which triggered a DMA request.
+  43          *
+  44          *******************************************************************************/
+  45          void Filter_1_SetInterruptMode(uint8 events) 
+  46          {
+  47   1          events &= Filter_1_EVENT_MASK;
+  48   1          Filter_1_INT_CTRL_REG = events;
+  49   1      }
+  50          
+  51          
+  52          /*******************************************************************************
+  53          * Function Name: Filter_1_SetDMAMode
+C51 COMPILER V9.51   FILTER_1_PVT                                                          12/19/2013 21:53:09 PAGE 2   
+
+  54          ********************************************************************************
+  55          *
+  56          * Summary:
+  57          *  Assign the events which will trigger a DMA request for the DFB.  There are 
+  58          *  two different DMA requests that can be triggered.
+  59          *
+  60          * Parameters:  
+  61          *  events:  A set of 4 bits which configure what event, if any, triggers a DMA 
+  62          *           request for the DFB.  
+  63          *           Bits [0:1] configure the trigger for DMA Request 1
+  64          *           Bits [2:3] configure the trigger for DMA Request 2
+  65          *            DMA Request 1: 
+  66          *               0 - no request will be generated
+  67          *               1 - Output value ready in the holding register on channel A
+  68          *               2 - Semaphore 0
+  69          *               3 - Sempahore 1
+  70          *            DMA Request 2: 
+  71          *               0 - no request will be generated
+  72          *               1 - Output value ready in the holding register on channel B
+  73          *               2 - Semaphore 0
+  74          *               3 - Sempahore 1
+  75          *
+  76          * Return: 
+  77          *  void
+  78          *
+  79          * Note:
+  80          *  Semaphore 0 and Semaphore 1 should not be configured as both a DMA request 
+  81          *  and an interrupt event, because, after one clock cycle, the system 
+  82          *  automatically clears any semaphore which triggered a DMA request.
+  83          *
+  84          *******************************************************************************/
+  85          void Filter_1_SetDMAMode(uint8 events) 
+  86          {
+  87   1          events &= Filter_1_DMA_CTRL_MASK;
+  88   1          Filter_1_DMA_CTRL_REG = events;
+  89   1      }
+  90          
+  91          
+  92          /* [] END OF FILE */
+C51 COMPILER V9.51   FILTER_1_PVT                                                          12/19/2013 21:53:09 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _Filter_1_SetInterruptMode (BEGIN)
+                                           ; SOURCE LINE # 45
+0000 900000      R     MOV     DPTR,#events
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 46
+                                           ; SOURCE LINE # 47
+0005 900000      R     MOV     DPTR,#events
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 541F              ANL     A,#01FH
+000D FF                MOV     R7,A
+000E 900000      R     MOV     DPTR,#events
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 48
+0013 900000      R     MOV     DPTR,#events
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 90C798            MOV     DPTR,#0C798H
+001B EF                MOV     A,R7
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 49
+001D 22                RET     
+             ; FUNCTION _Filter_1_SetInterruptMode (END)
+
+             ; FUNCTION _Filter_1_SetDMAMode (BEGIN)
+                                           ; SOURCE LINE # 85
+0000 900000      R     MOV     DPTR,#events
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 86
+                                           ; SOURCE LINE # 87
+0005 900000      R     MOV     DPTR,#events
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 540F              ANL     A,#0FH
+000D FF                MOV     R7,A
+000E 900000      R     MOV     DPTR,#events
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 88
+0013 900000      R     MOV     DPTR,#events
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 90C79C            MOV     DPTR,#0C79CH
+001B EF                MOV     A,R7
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+001D 22                RET     
+             ; FUNCTION _Filter_1_SetDMAMode (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     60    ----
+   CONSTANT SIZE    =   ----    ----
+C51 COMPILER V9.51   FILTER_1_PVT                                                          12/19/2013 21:53:09 PAGE 4   
+
+   XDATA SIZE       =   ----       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

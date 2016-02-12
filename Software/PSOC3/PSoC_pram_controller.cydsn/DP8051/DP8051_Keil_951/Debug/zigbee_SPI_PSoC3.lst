@@ -1,0 +1,466 @@
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE ZIGBEE_SPI_PSOC3
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\zigbee_SPI_PSoC3.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.lst) CD DB NOIP OT(
+                    -2,SIZE) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\zigbee_SPI_PSoC3.obj)
+
+line level    source
+
+   1          /* ============================================================================
+   2           *
+   3           * Project: Smart Pram
+   4           * Zigbee SPI driver for the PSoC3
+   5           *
+   6           * Author: Kjeld Laursen
+   7           * October 2013
+   8           *
+   9           * ============================================================================
+  10           */
+  11          
+  12          // include own header file
+  13          #include <zigbee_SPI_PSoC3.h>
+  14          
+  15          //******************************************************************************
+  16          // Zigbee SPI register read and write functions
+  17          //******************************************************************************
+  18          
+  19          // Read short register
+  20          uint8 zigbee_short_read(uint8 adr)
+  21          {
+  22   1          adr = adr << 1;                                                             // Setup address for read
+  23   1          SPI_WriteTxData(adr);                                               // Send SPI address
+  24   1          SPI_WriteTxData(0x00);                      // Send dummy byte for read
+  25   1          while( !(SPI_ReadTxStatus() & 0x01));       // while not: SPI-done, wait
+  26   1          return SPI_ReadRxData();                                    // Read SPI data
+  27   1      }
+  28          
+  29          // Read long register
+  30          uint8 zigbee_long_read(uint16 adr)
+  31          {
+  32   1          uint8 adrMSB, adrLSB;
+  33   1          adr = (adr << 5) | (1 << 15);                               // Setup address for read
+  34   1          adrMSB = adr >> 8;                                                  // Setup address MSB
+  35   1          adrLSB = adr;                                                               // Setup address LSB
+  36   1          SPI_WriteTxData(adrMSB);                                    // Send SPI address MSB
+  37   1          SPI_WriteTxData(adrLSB);                                    // Send SPI address LSB
+  38   1          SPI_WriteTxData(0x00);                      // Send dummy byte for read
+  39   1          while( !(SPI_ReadTxStatus() & 0x01));       // while not: SPI-done, wait
+  40   1          return SPI_ReadRxData();                                    // Read SPI data
+  41   1      }
+  42          
+  43          // Write short register
+  44          void zigbee_short_write(uint8 adr, uint8 dat)
+  45          {
+  46   1          adr = (adr << 1) | 1;                                               // Setup address for write
+  47   1          SPI_WriteTxData(adr);                                               // Send SPI address
+  48   1          SPI_WriteTxData(dat);                                               // Send SPI data
+  49   1          while( !(SPI_ReadTxStatus() & 0x01));       // while not: SPI-done, wait
+  50   1      }
+  51          
+  52          // Write long register
+  53          void zigbee_long_write(uint16 adr, uint8 dat)
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 2   
+
+  54          {
+  55   1          uint8 adrMSB, adrLSB;
+  56   1          adr = (adr << 5) | (1 << 15) | (1 << 4);    // Setup address for write
+  57   1          adrMSB = adr >> 8;                                                  // Setup address MSB
+  58   1          adrLSB = adr;                                                               // Setup address LSB
+  59   1          SPI_WriteTxData(adrMSB);                                    // Send SPI address MSB
+  60   1          SPI_WriteTxData(adrLSB);                                    // Send SPI address LSB
+  61   1          SPI_WriteTxData(dat);                                               // Send SPI data
+  62   1          while( !(SPI_ReadTxStatus() & 0x01));       // while not: SPI-done, wait
+  63   1      }
+  64          
+  65          //******************************************************************************
+  66          // Zigbee hardware port functions and other platform specific funtions
+  67          //******************************************************************************
+  68          
+  69          // Set the reset pin to high or low
+  70          void zigbee_set_resetpin(uint8 level)
+  71          {
+  72   1              if( level == 0 )
+  73   1                      nRESET_Write(0);
+  74   1              else
+  75   1                      nRESET_Write(1);
+  76   1      }
+  77          
+  78          // Set the wake pin to high or low
+  79          void zigbee_set_wakepin(uint8 level)
+  80          {
+  81   1              if( level == 0 )
+  82   1                      WAKE_Write(0);
+  83   1              else
+  84   1                      WAKE_Write(1);
+  85   1      }
+  86          
+  87          // Software delay in micro seconds
+  88          void zigbee_delay_us(uint16 us)
+  89          {
+  90   1              CyDelayUs(us);
+  91   1      }
+  92          
+  93          //******************************************************************************
+  94          // End of file
+  95          //******************************************************************************
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _zigbee_short_read (BEGIN)
+                                           ; SOURCE LINE # 20
+0000 900000      R     MOV     DPTR,#adr
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 21
+                                           ; SOURCE LINE # 22
+0005 900000      R     MOV     DPTR,#adr
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 25E0              ADD     A,ACC
+000D FF                MOV     R7,A
+000E 900000      R     MOV     DPTR,#adr
+0011 EF                MOV     A,R7
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 23
+0013 900000      R     MOV     DPTR,#adr
+0016 E0                MOVX    A,@DPTR
+0017 FF                MOV     R7,A
+0018 120000      E     LCALL   _SPI_WriteTxData
+                                           ; SOURCE LINE # 24
+001B 7F00              MOV     R7,#00H
+001D 120000      E     LCALL   _SPI_WriteTxData
+0020         ?C0001:
+                                           ; SOURCE LINE # 25
+0020 120000      E     LCALL   SPI_ReadTxStatus
+0023 EF                MOV     A,R7
+0024 30E0F9            JNB     ACC.0,?C0001
+0027         ?C0002:
+                                           ; SOURCE LINE # 26
+0027 120000      E     LCALL   SPI_ReadRxData
+                                           ; SOURCE LINE # 27
+002A         ?C0003:
+002A 22                RET     
+             ; FUNCTION _zigbee_short_read (END)
+
+             ; FUNCTION _zigbee_long_read (BEGIN)
+                                           ; SOURCE LINE # 30
+0000 900000      R     MOV     DPTR,#adr
+0003 EE                MOV     A,R6
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 31
+                                           ; SOURCE LINE # 33
+0008 900000      R     MOV     DPTR,#adr
+000B E0                MOVX    A,@DPTR
+000C FE                MOV     R6,A
+000D A3                INC     DPTR
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 7805              MOV     R0,#05H
+0013         ?C0020:
+0013 C3                CLR     C
+0014 33                RLC     A
+0015 CE                XCH     A,R6
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 4   
+
+0016 33                RLC     A
+0017 CE                XCH     A,R6
+0018 D8F9              DJNZ    R0,?C0020
+001A FF                MOV     R7,A
+001B EE                MOV     A,R6
+001C 4480              ORL     A,#080H
+001E FE                MOV     R6,A
+001F 900000      R     MOV     DPTR,#adr
+0022 EE                MOV     A,R6
+0023 F0                MOVX    @DPTR,A
+0024 A3                INC     DPTR
+0025 EF                MOV     A,R7
+0026 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 34
+0027 900000      R     MOV     DPTR,#adr
+002A E0                MOVX    A,@DPTR
+002B FE                MOV     R6,A
+002C A3                INC     DPTR
+002D E0                MOVX    A,@DPTR
+002E FF                MOV     R7,A
+002F EE                MOV     A,R6
+0030 FF                MOV     R7,A
+0031 7E00              MOV     R6,#00H
+0033 900000      R     MOV     DPTR,#adrMSB
+0036 EF                MOV     A,R7
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 35
+0038 900000      R     MOV     DPTR,#adr
+003B E0                MOVX    A,@DPTR
+003C FE                MOV     R6,A
+003D A3                INC     DPTR
+003E E0                MOVX    A,@DPTR
+003F FF                MOV     R7,A
+0040 900000      R     MOV     DPTR,#adrLSB
+0043 EF                MOV     A,R7
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 36
+0045 900000      R     MOV     DPTR,#adrMSB
+0048 E0                MOVX    A,@DPTR
+0049 FF                MOV     R7,A
+004A 120000      E     LCALL   _SPI_WriteTxData
+                                           ; SOURCE LINE # 37
+004D 900000      R     MOV     DPTR,#adrLSB
+0050 E0                MOVX    A,@DPTR
+0051 FF                MOV     R7,A
+0052 120000      E     LCALL   _SPI_WriteTxData
+                                           ; SOURCE LINE # 38
+0055 7F00              MOV     R7,#00H
+0057 120000      E     LCALL   _SPI_WriteTxData
+005A         ?C0004:
+                                           ; SOURCE LINE # 39
+005A 120000      E     LCALL   SPI_ReadTxStatus
+005D EF                MOV     A,R7
+005E 30E0F9            JNB     ACC.0,?C0004
+0061         ?C0005:
+                                           ; SOURCE LINE # 40
+0061 120000      E     LCALL   SPI_ReadRxData
+                                           ; SOURCE LINE # 41
+0064         ?C0006:
+0064 22                RET     
+             ; FUNCTION _zigbee_long_read (END)
+
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 5   
+
+             ; FUNCTION _zigbee_short_write (BEGIN)
+                                           ; SOURCE LINE # 44
+0000 900000      R     MOV     DPTR,#adr
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 900000      R     MOV     DPTR,#dat
+0008 ED                MOV     A,R5
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 46
+000A 900000      R     MOV     DPTR,#adr
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F EF                MOV     A,R7
+0010 25E0              ADD     A,ACC
+0012 FF                MOV     R7,A
+0013 EF                MOV     A,R7
+0014 4401              ORL     A,#01H
+0016 FF                MOV     R7,A
+0017 900000      R     MOV     DPTR,#adr
+001A EF                MOV     A,R7
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 47
+001C 900000      R     MOV     DPTR,#adr
+001F E0                MOVX    A,@DPTR
+0020 FF                MOV     R7,A
+0021 120000      E     LCALL   _SPI_WriteTxData
+                                           ; SOURCE LINE # 48
+0024 900000      R     MOV     DPTR,#dat
+0027 E0                MOVX    A,@DPTR
+0028 FF                MOV     R7,A
+0029 120000      E     LCALL   _SPI_WriteTxData
+002C         ?C0007:
+                                           ; SOURCE LINE # 49
+002C 120000      E     LCALL   SPI_ReadTxStatus
+002F EF                MOV     A,R7
+0030 30E0F9            JNB     ACC.0,?C0007
+0033         ?C0008:
+                                           ; SOURCE LINE # 50
+0033         ?C0009:
+0033 22                RET     
+             ; FUNCTION _zigbee_short_write (END)
+
+             ; FUNCTION _zigbee_long_write (BEGIN)
+                                           ; SOURCE LINE # 53
+0000 900000      R     MOV     DPTR,#adr
+0003 EE                MOV     A,R6
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+0008 900000      R     MOV     DPTR,#dat
+000B ED                MOV     A,R5
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 56
+000D 900000      R     MOV     DPTR,#adr
+0010 E0                MOVX    A,@DPTR
+0011 FE                MOV     R6,A
+0012 A3                INC     DPTR
+0013 E0                MOVX    A,@DPTR
+0014 FF                MOV     R7,A
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 6   
+
+0015 EF                MOV     A,R7
+0016 7805              MOV     R0,#05H
+0018         ?C0021:
+0018 C3                CLR     C
+0019 33                RLC     A
+001A CE                XCH     A,R6
+001B 33                RLC     A
+001C CE                XCH     A,R6
+001D D8F9              DJNZ    R0,?C0021
+001F FF                MOV     R7,A
+0020 EE                MOV     A,R6
+0021 4480              ORL     A,#080H
+0023 FE                MOV     R6,A
+0024 EF                MOV     A,R7
+0025 4410              ORL     A,#010H
+0027 FF                MOV     R7,A
+0028 900000      R     MOV     DPTR,#adr
+002B EE                MOV     A,R6
+002C F0                MOVX    @DPTR,A
+002D A3                INC     DPTR
+002E EF                MOV     A,R7
+002F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 57
+0030 900000      R     MOV     DPTR,#adr
+0033 E0                MOVX    A,@DPTR
+0034 FE                MOV     R6,A
+0035 A3                INC     DPTR
+0036 E0                MOVX    A,@DPTR
+0037 FF                MOV     R7,A
+0038 EE                MOV     A,R6
+0039 FF                MOV     R7,A
+003A 7E00              MOV     R6,#00H
+003C 900000      R     MOV     DPTR,#adrMSB
+003F EF                MOV     A,R7
+0040 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 58
+0041 900000      R     MOV     DPTR,#adr
+0044 E0                MOVX    A,@DPTR
+0045 FE                MOV     R6,A
+0046 A3                INC     DPTR
+0047 E0                MOVX    A,@DPTR
+0048 FF                MOV     R7,A
+0049 900000      R     MOV     DPTR,#adrLSB
+004C EF                MOV     A,R7
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 59
+004E 900000      R     MOV     DPTR,#adrMSB
+0051 E0                MOVX    A,@DPTR
+0052 FF                MOV     R7,A
+0053 120000      E     LCALL   _SPI_WriteTxData
+                                           ; SOURCE LINE # 60
+0056 900000      R     MOV     DPTR,#adrLSB
+0059 E0                MOVX    A,@DPTR
+005A FF                MOV     R7,A
+005B 120000      E     LCALL   _SPI_WriteTxData
+                                           ; SOURCE LINE # 61
+005E 900000      R     MOV     DPTR,#dat
+0061 E0                MOVX    A,@DPTR
+0062 FF                MOV     R7,A
+0063 120000      E     LCALL   _SPI_WriteTxData
+0066         ?C0010:
+                                           ; SOURCE LINE # 62
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 7   
+
+0066 120000      E     LCALL   SPI_ReadTxStatus
+0069 EF                MOV     A,R7
+006A 30E0F9            JNB     ACC.0,?C0010
+006D         ?C0011:
+                                           ; SOURCE LINE # 63
+006D         ?C0012:
+006D 22                RET     
+             ; FUNCTION _zigbee_long_write (END)
+
+             ; FUNCTION _zigbee_set_resetpin (BEGIN)
+                                           ; SOURCE LINE # 70
+0000 900000      R     MOV     DPTR,#level
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 71
+                                           ; SOURCE LINE # 72
+0005 900000      R     MOV     DPTR,#level
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 7006              JNZ     ?C0013
+                                           ; SOURCE LINE # 73
+000D 7F00              MOV     R7,#00H
+000F 120000      E     LCALL   _nRESET_Write
+0012 22                RET     
+0013         ?C0013:
+                                           ; SOURCE LINE # 75
+0013 7F01              MOV     R7,#01H
+0015 120000      E     LCALL   _nRESET_Write
+                                           ; SOURCE LINE # 76
+0018         ?C0015:
+0018 22                RET     
+             ; FUNCTION _zigbee_set_resetpin (END)
+
+             ; FUNCTION _zigbee_set_wakepin (BEGIN)
+                                           ; SOURCE LINE # 79
+0000 900000      R     MOV     DPTR,#level
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 80
+                                           ; SOURCE LINE # 81
+0005 900000      R     MOV     DPTR,#level
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+000A EF                MOV     A,R7
+000B 7006              JNZ     ?C0016
+                                           ; SOURCE LINE # 82
+000D 7F00              MOV     R7,#00H
+000F 120000      E     LCALL   _WAKE_Write
+0012 22                RET     
+0013         ?C0016:
+                                           ; SOURCE LINE # 84
+0013 7F01              MOV     R7,#01H
+0015 120000      E     LCALL   _WAKE_Write
+                                           ; SOURCE LINE # 85
+0018         ?C0018:
+0018 22                RET     
+             ; FUNCTION _zigbee_set_wakepin (END)
+
+             ; FUNCTION _zigbee_delay_us (BEGIN)
+                                           ; SOURCE LINE # 88
+0000 900000      R     MOV     DPTR,#us
+C51 COMPILER V9.51   ZIGBEE_SPI_PSOC3                                                      12/19/2013 21:53:04 PAGE 8   
+
+0003 EE                MOV     A,R6
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+                                           ; SOURCE LINE # 90
+0008 900000      R     MOV     DPTR,#us
+000B E0                MOVX    A,@DPTR
+000C FE                MOV     R6,A
+000D A3                INC     DPTR
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 120000      E     LCALL   _CyDelayUs
+                                           ; SOURCE LINE # 91
+0013 22                RET     
+             ; FUNCTION _zigbee_delay_us (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    376    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      16
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

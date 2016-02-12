@@ -1,0 +1,351 @@
+C51 COMPILER V9.51   OPAMP_1                                                               12/19/2013 21:53:11 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE OPAMP_1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\Opamp_1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\Opamp_1.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Opamp_1.lst) CD DB NOI
+                    -P OT(2,SIZE) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\Opamp_1.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: Opamp_1.c
+   3          * Version 1.90
+   4          *
+   5          * Description:
+   6          *  This file provides the source code to the API for OpAmp (Analog Buffer) 
+   7          *  Component.
+   8          *
+   9          * Note:
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions, 
+  14          * disclaimers, and limitations in the end user license agreement accompanying 
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "Opamp_1.h"
+  19          
+  20          uint8 Opamp_1_initVar = 0u;
+  21          
+  22          
+  23          /*******************************************************************************   
+  24          * Function Name: Opamp_1_Init
+  25          ********************************************************************************
+  26          *
+  27          * Summary:
+  28          *  Initialize component's parameters to the parameters set by user in the 
+  29          *  customizer of the component placed onto schematic. Usually called in 
+  30          *  Opamp_1_Start().
+  31          *
+  32          * Parameters:
+  33          *  void
+  34          *
+  35          * Return:
+  36          *  void
+  37          *
+  38          *******************************************************************************/
+  39          void Opamp_1_Init(void) 
+  40          {
+  41   1          Opamp_1_SetPower(Opamp_1_DEFAULT_POWER);
+  42   1      }
+  43          
+  44          
+  45          /*******************************************************************************   
+  46          * Function Name: Opamp_1_Enable
+  47          ********************************************************************************
+  48          *
+  49          * Summary:
+  50          *  Enables the OpAmp block operation
+  51          *
+  52          * Parameters:
+  53          *  void
+C51 COMPILER V9.51   OPAMP_1                                                               12/19/2013 21:53:11 PAGE 2   
+
+  54          *
+  55          * Return:
+  56          *  void
+  57          *
+  58          *******************************************************************************/
+  59          void Opamp_1_Enable(void) 
+  60          {
+  61   1          /* Enable negative charge pumps in ANIF */
+  62   1          Opamp_1_PUMP_CR1_REG  |= (Opamp_1_PUMP_CR1_CLKSEL | Opamp_1_PUMP_CR1_FORCE);
+  63   1      
+  64   1          /* Enable power to buffer in active mode */
+  65   1          Opamp_1_PM_ACT_CFG_REG |= Opamp_1_ACT_PWR_EN;
+  66   1      
+  67   1          /* Enable power to buffer in alternative active mode */
+  68   1          Opamp_1_PM_STBY_CFG_REG |= Opamp_1_STBY_PWR_EN;
+  69   1      }
+  70          
+  71          
+  72          /*******************************************************************************
+  73          * Function Name:   Opamp_1_Start
+  74          ********************************************************************************
+  75          *
+  76          * Summary:
+  77          *  The start function initializes the Analog Buffer with the default values and 
+  78          *  sets the power to the given level. A power level of 0, is same as 
+  79          *  executing the stop function.
+  80          *
+  81          * Parameters:
+  82          *  void
+  83          *
+  84          * Return:
+  85          *  void
+  86          *
+  87          * Global variables:
+  88          *  Opamp_1_initVar: Used to check the initial configuration, modified 
+  89          *  when this function is called for the first time.
+  90          *
+  91          *******************************************************************************/
+  92          void Opamp_1_Start(void) 
+  93          {
+  94   1          if(Opamp_1_initVar == 0u)
+  95   1          {
+  96   2              Opamp_1_initVar = 1u;
+  97   2              Opamp_1_Init();
+  98   2          }
+  99   1      
+ 100   1          Opamp_1_Enable();
+ 101   1      }
+ 102          
+ 103          
+ 104          /*******************************************************************************
+ 105          * Function Name: Opamp_1_Stop
+ 106          ********************************************************************************
+ 107          *
+ 108          * Summary:
+ 109          *  Powers down amplifier to lowest power state.
+ 110          *
+ 111          * Parameters:
+ 112          *  void
+ 113          *
+ 114          * Return:
+ 115          *  void
+C51 COMPILER V9.51   OPAMP_1                                                               12/19/2013 21:53:11 PAGE 3   
+
+ 116          *
+ 117          *******************************************************************************/
+ 118          void Opamp_1_Stop(void) 
+ 119          {
+ 120   1          /* Disable power to buffer in active mode template */
+ 121   1          Opamp_1_PM_ACT_CFG_REG &= (uint8)(~Opamp_1_ACT_PWR_EN);
+ 122   1      
+ 123   1          /* Disable power to buffer in alternative active mode template */
+ 124   1          Opamp_1_PM_STBY_CFG_REG &= (uint8)(~Opamp_1_STBY_PWR_EN);
+ 125   1          
+ 126   1          /* Disable negative charge pumps for ANIF only if all ABuf is turned OFF */
+ 127   1          if(Opamp_1_PM_ACT_CFG_REG == 0u)
+ 128   1          {
+ 129   2              Opamp_1_PUMP_CR1_REG &= (uint8)(~(Opamp_1_PUMP_CR1_CLKSEL | Opamp_1_PUMP_CR1_FORCE));
+ 130   2          }
+ 131   1      }
+ 132          
+ 133          
+ 134          /*******************************************************************************
+ 135          * Function Name: Opamp_1_SetPower
+ 136          ********************************************************************************
+ 137          *
+ 138          * Summary:
+ 139          *  Sets power level of Analog buffer.
+ 140          *
+ 141          * Parameters: 
+ 142          *  power: PSoC3: Sets power level between low (1) and high power (3).
+ 143          *         PSoC5: Sets power level High (0)
+ 144          *
+ 145          * Return:
+ 146          *  void
+ 147          *
+ 148          **********************************************************************************/
+ 149          void Opamp_1_SetPower(uint8 power) 
+ 150          {
+ 151   1          #if (CY_PSOC3 || CY_PSOC5LP)
+ 152   1              Opamp_1_CR_REG &= (uint8)(~Opamp_1_PWR_MASK);
+ 153   1              Opamp_1_CR_REG |= power & Opamp_1_PWR_MASK;      /* Set device power */
+ 154   1          #else
+                      CYASSERT(Opamp_1_HIGHPOWER == power);
+                  #endif /* CY_PSOC3 || CY_PSOC5LP */
+ 157   1      }
+ 158          
+ 159          
+ 160          /* [] END OF FILE */
+C51 COMPILER V9.51   OPAMP_1                                                               12/19/2013 21:53:11 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Opamp_1_Init (BEGIN)
+                                           ; SOURCE LINE # 39
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 41
+0000 7F03              MOV     R7,#03H
+0002 120000      R     LCALL   _Opamp_1_SetPower
+                                           ; SOURCE LINE # 42
+0005 22                RET     
+             ; FUNCTION Opamp_1_Init (END)
+
+             ; FUNCTION Opamp_1_Enable (BEGIN)
+                                           ; SOURCE LINE # 59
+                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 62
+0000 905877            MOV     DPTR,#05877H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 4460              ORL     A,#060H
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 65
+000B 9043A4            MOV     DPTR,#043A4H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 4408              ORL     A,#08H
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 68
+0016 9043B4            MOV     DPTR,#043B4H
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 4408              ORL     A,#08H
+001E FF                MOV     R7,A
+001F EF                MOV     A,R7
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+0021 22                RET     
+             ; FUNCTION Opamp_1_Enable (END)
+
+             ; FUNCTION Opamp_1_Start (BEGIN)
+                                           ; SOURCE LINE # 92
+                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 94
+0000 900000      R     MOV     DPTR,#Opamp_1_initVar
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 7009              JNZ     ?C0003
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 96
+0008 900000      R     MOV     DPTR,#Opamp_1_initVar
+000B 7401              MOV     A,#01H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 97
+C51 COMPILER V9.51   OPAMP_1                                                               12/19/2013 21:53:11 PAGE 5   
+
+000E 120000      R     LCALL   Opamp_1_Init
+                                           ; SOURCE LINE # 98
+0011         ?C0003:
+                                           ; SOURCE LINE # 100
+0011 120000      R     LCALL   Opamp_1_Enable
+                                           ; SOURCE LINE # 101
+0014 22                RET     
+             ; FUNCTION Opamp_1_Start (END)
+
+             ; FUNCTION Opamp_1_Stop (BEGIN)
+                                           ; SOURCE LINE # 118
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 121
+0000 9043A4            MOV     DPTR,#043A4H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 54F7              ANL     A,#0F7H
+0008 FF                MOV     R7,A
+0009 EF                MOV     A,R7
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+000B 9043B4            MOV     DPTR,#043B4H
+000E E0                MOVX    A,@DPTR
+000F FF                MOV     R7,A
+0010 EF                MOV     A,R7
+0011 54F7              ANL     A,#0F7H
+0013 FF                MOV     R7,A
+0014 EF                MOV     A,R7
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 127
+0016 9043A4            MOV     DPTR,#043A4H
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B EF                MOV     A,R7
+001C 700B              JNZ     ?C0006
+                                           ; SOURCE LINE # 128
+                                           ; SOURCE LINE # 129
+001E 905877            MOV     DPTR,#05877H
+0021 E0                MOVX    A,@DPTR
+0022 FF                MOV     R7,A
+0023 EF                MOV     A,R7
+0024 549F              ANL     A,#09FH
+0026 FF                MOV     R7,A
+0027 EF                MOV     A,R7
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 131
+0029         ?C0006:
+0029 22                RET     
+             ; FUNCTION Opamp_1_Stop (END)
+
+             ; FUNCTION _Opamp_1_SetPower (BEGIN)
+                                           ; SOURCE LINE # 149
+0000 900000      R     MOV     DPTR,#power
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 150
+                                           ; SOURCE LINE # 152
+0005 90585E            MOV     DPTR,#0585EH
+0008 E0                MOVX    A,@DPTR
+0009 FF                MOV     R7,A
+C51 COMPILER V9.51   OPAMP_1                                                               12/19/2013 21:53:11 PAGE 6   
+
+000A EF                MOV     A,R7
+000B 54FC              ANL     A,#0FCH
+000D FF                MOV     R7,A
+000E EF                MOV     A,R7
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 153
+0010 90585E            MOV     DPTR,#0585EH
+0013 C083              PUSH    DPH
+0015 C082              PUSH    DPL
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+0019 900000      R     MOV     DPTR,#power
+001C E0                MOVX    A,@DPTR
+001D FE                MOV     R6,A
+001E EE                MOV     A,R6
+001F 5403              ANL     A,#03H
+0021 FE                MOV     R6,A
+0022 EF                MOV     A,R7
+0023 4E                ORL     A,R6
+0024 FF                MOV     R7,A
+0025 D082              POP     DPL
+0027 D083              POP     DPH
+0029 EF                MOV     A,R7
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 157
+002B 22                RET     
+             ; FUNCTION _Opamp_1_SetPower (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    147    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      1       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

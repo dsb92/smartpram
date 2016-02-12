@@ -1,0 +1,650 @@
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE FUNCTIONS
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\Functions.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Functions.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\Functions.lst) CD DB NOIP OT(2,SIZE) INCDIR
+                    -(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\Functions.obj)
+
+line level    source
+
+   1          #include "Functions.h"
+   2          
+   3          int8 analyzeSound( float* arr, uint8 size )
+   4          {
+   5   1              float total = 0;        // Total values of all elements
+   6   1              float average = 0;      // Average value of all elements
+   7   1              float max = arr[2];     // Set max to the first element we analyze
+   8   1              float min = arr[2]; // Set min to the first element we analyze
+   9   1              float range = 0;
+  10   1              int countSamples009 = 0;        // Counts ammount of elements with a value higher than 0,09
+  11   1              int countSamples008 = 0;        // Counts ammount of elements with a value higher than 0,08
+  12   1              int8 result;    // Contains the resulting noise level. This will range from 0 to 100.
+  13   1              
+  14   1              int i;  // For-loop counter
+  15   1              
+  16   1              for( i = 2; i < size; i++ ) // Skip sample 0 and 1. Often starts with a fake high value
+  17   1              {
+  18   2                      total += arr[i];        // Add the current element to total
+  19   2                      
+  20   2                      if( arr[i] < min )      // If lowest so far: save in min
+  21   2                              min = arr[i];
+  22   2                      
+  23   2                      if( arr[i] > max )      // If highest so far: save in max
+  24   2                              max = arr[i];
+  25   2                      
+  26   2                      if( arr[i] > 0.09 )             // If higher than 0,09: increment respective counter
+  27   2                              countSamples009++;
+  28   2                      if( arr[i] > 0.08 )             // If higher than 0,08: increment respective counter
+  29   2                              countSamples008++;      
+  30   2              }
+  31   1              
+  32   1              // Calculate average value
+  33   1              average = total / (float)(size - 2);
+  34   1              
+  35   1              // Calculate range of values
+  36   1              range = max - min;
+  37   1              
+  38   1              // Roof of the scale: 0.16 V average is 100%, 0.00 V average is 0%.
+  39   1              if( average > 0.16 )
+  40   1                      result = 100;
+  41   1              else
+  42   1                      result = (int8)((1000*average)/(1.6));  // Result is scaled to only range from 0 and 100.
+  43   1                      // Everything between 0V and 0.16V (the roof of the scale), is translated to the matching
+  44   1                      // value on the 0 to 100 scale.
+  45   1                      
+  46   1              // Reduce result 30% if signal has a low range of peak-to-peak values
+  47   1              // Reduce result 30% if signal has few peak-to-peaks under 0,08 and 0,09 V.
+  48   1              if( range < 0.1 )
+  49   1                      result = result * 0.7;
+  50   1              if( (countSamples008 + countSamples009) < (0.5 * (size - 2)) )
+  51   1                      result = result * 0.7;
+  52   1              
+  53   1              return result;
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 2   
+
+  54   1      }
+  55          
+  56          int8 analyzeTemp( int16 tempFromADC ){
+  57   1              int8 realTemp;
+  58   1              realTemp = (int8)((tempFromADC/748.98) +23.205);
+  59   1              return realTemp;
+  60   1      }
+  61          
+  62          /* [] END OF FILE */
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _analyzeSound (BEGIN)
+                                           ; SOURCE LINE # 3
+0000 900000      R     MOV     DPTR,#arr
+0003 120000      E     LCALL   ?C?PSTXDATA
+0006 900000      R     MOV     DPTR,#size
+0009 ED                MOV     A,R5
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 4
+                                           ; SOURCE LINE # 5
+000B 7F00              MOV     R7,#00H
+000D 7E00              MOV     R6,#00H
+000F 7D00              MOV     R5,#00H
+0011 7C00              MOV     R4,#00H
+0013 900000      R     MOV     DPTR,#total
+0016 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 6
+0019 7F00              MOV     R7,#00H
+001B 7E00              MOV     R6,#00H
+001D 7D00              MOV     R5,#00H
+001F 7C00              MOV     R4,#00H
+0021 900000      R     MOV     DPTR,#average
+0024 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 7
+0027 900000      R     MOV     DPTR,#arr
+002A 120000      E     LCALL   ?C?PLDXDATA
+002D E9                MOV     A,R1
+002E 2408              ADD     A,#08H
+0030 F9                MOV     R1,A
+0031 EA                MOV     A,R2
+0032 3400              ADDC    A,#00H
+0034 FA                MOV     R2,A
+0035 120000      E     LCALL   ?C?LLDPTR
+0038 900000      R     MOV     DPTR,#max
+003B 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 8
+003E 900000      R     MOV     DPTR,#arr
+0041 120000      E     LCALL   ?C?PLDXDATA
+0044 E9                MOV     A,R1
+0045 2408              ADD     A,#08H
+0047 F9                MOV     R1,A
+0048 EA                MOV     A,R2
+0049 3400              ADDC    A,#00H
+004B FA                MOV     R2,A
+004C 120000      E     LCALL   ?C?LLDPTR
+004F 900000      R     MOV     DPTR,#min
+0052 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 9
+0055 7F00              MOV     R7,#00H
+0057 7E00              MOV     R6,#00H
+0059 7D00              MOV     R5,#00H
+005B 7C00              MOV     R4,#00H
+005D 900000      R     MOV     DPTR,#range
+0060 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 10
+0063 900000      R     MOV     DPTR,#countSamples009
+0066 E4                CLR     A
+0067 F0                MOVX    @DPTR,A
+0068 A3                INC     DPTR
+0069 E4                CLR     A
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 4   
+
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 11
+006B 900000      R     MOV     DPTR,#countSamples008
+006E E4                CLR     A
+006F F0                MOVX    @DPTR,A
+0070 A3                INC     DPTR
+0071 E4                CLR     A
+0072 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 16
+0073 900000      R     MOV     DPTR,#i
+0076 E4                CLR     A
+0077 F0                MOVX    @DPTR,A
+0078 A3                INC     DPTR
+0079 7402              MOV     A,#02H
+007B F0                MOVX    @DPTR,A
+007C         ?C0001:
+007C 900000      R     MOV     DPTR,#size
+007F E0                MOVX    A,@DPTR
+0080 FF                MOV     R7,A
+0081 7E00              MOV     R6,#00H
+0083 900000      R     MOV     DPTR,#i
+0086 E0                MOVX    A,@DPTR
+0087 FC                MOV     R4,A
+0088 A3                INC     DPTR
+0089 E0                MOVX    A,@DPTR
+008A FD                MOV     R5,A
+008B C3                CLR     C
+008C ED                MOV     A,R5
+008D 9F                SUBB    A,R7
+008E EE                MOV     A,R6
+008F 6480              XRL     A,#080H
+0091 F8                MOV     R0,A
+0092 EC                MOV     A,R4
+0093 6480              XRL     A,#080H
+0095 98                SUBB    A,R0
+0096 4003              JC      $ + 5H
+0098 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 17
+                                           ; SOURCE LINE # 18
+009B 900000      R     MOV     DPTR,#total
+009E 120000      E     LCALL   ?C?LLDXDATA
+00A1 C004              PUSH    AR4
+00A3 C005              PUSH    AR5
+00A5 C006              PUSH    AR6
+00A7 C007              PUSH    AR7
+00A9 900000      R     MOV     DPTR,#i
+00AC E0                MOVX    A,@DPTR
+00AD FE                MOV     R6,A
+00AE A3                INC     DPTR
+00AF E0                MOVX    A,@DPTR
+00B0 FF                MOV     R7,A
+00B1 EF                MOV     A,R7
+00B2 7802              MOV     R0,#02H
+00B4         ?C0014:
+00B4 C3                CLR     C
+00B5 33                RLC     A
+00B6 CE                XCH     A,R6
+00B7 33                RLC     A
+00B8 CE                XCH     A,R6
+00B9 D8F9              DJNZ    R0,?C0014
+00BB FF                MOV     R7,A
+00BC 900000      R     MOV     DPTR,#arr
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 5   
+
+00BF 120000      E     LCALL   ?C?PLDXDATA
+00C2 E9                MOV     A,R1
+00C3 2F                ADD     A,R7
+00C4 F9                MOV     R1,A
+00C5 EA                MOV     A,R2
+00C6 3E                ADDC    A,R6
+00C7 FA                MOV     R2,A
+00C8 120000      E     LCALL   ?C?LLDPTR0
+00CB D007              POP     AR7
+00CD D006              POP     AR6
+00CF D005              POP     AR5
+00D1 D004              POP     AR4
+00D3 120000      E     LCALL   ?C?FPADD
+00D6 900000      R     MOV     DPTR,#total
+00D9 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 20
+00DC 900000      R     MOV     DPTR,#i
+00DF E0                MOVX    A,@DPTR
+00E0 FE                MOV     R6,A
+00E1 A3                INC     DPTR
+00E2 E0                MOVX    A,@DPTR
+00E3 FF                MOV     R7,A
+00E4 EF                MOV     A,R7
+00E5 7802              MOV     R0,#02H
+00E7         ?C0015:
+00E7 C3                CLR     C
+00E8 33                RLC     A
+00E9 CE                XCH     A,R6
+00EA 33                RLC     A
+00EB CE                XCH     A,R6
+00EC D8F9              DJNZ    R0,?C0015
+00EE FF                MOV     R7,A
+00EF 900000      R     MOV     DPTR,#arr
+00F2 120000      E     LCALL   ?C?PLDXDATA
+00F5 E9                MOV     A,R1
+00F6 2F                ADD     A,R7
+00F7 F9                MOV     R1,A
+00F8 EA                MOV     A,R2
+00F9 3E                ADDC    A,R6
+00FA FA                MOV     R2,A
+00FB 120000      E     LCALL   ?C?LLDPTR
+00FE 900000      R     MOV     DPTR,#min
+0101 120000      E     LCALL   ?C?LLDXDATA0
+0104 120000      E     LCALL   ?C?FPCMP3
+0107 602A              JZ      ?C0004
+0109 4028              JC      ?C0004
+                                           ; SOURCE LINE # 21
+010B 900000      R     MOV     DPTR,#i
+010E E0                MOVX    A,@DPTR
+010F FE                MOV     R6,A
+0110 A3                INC     DPTR
+0111 E0                MOVX    A,@DPTR
+0112 FF                MOV     R7,A
+0113 EF                MOV     A,R7
+0114 7802              MOV     R0,#02H
+0116         ?C0016:
+0116 C3                CLR     C
+0117 33                RLC     A
+0118 CE                XCH     A,R6
+0119 33                RLC     A
+011A CE                XCH     A,R6
+011B D8F9              DJNZ    R0,?C0016
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 6   
+
+011D FF                MOV     R7,A
+011E 900000      R     MOV     DPTR,#arr
+0121 120000      E     LCALL   ?C?PLDXDATA
+0124 E9                MOV     A,R1
+0125 2F                ADD     A,R7
+0126 F9                MOV     R1,A
+0127 EA                MOV     A,R2
+0128 3E                ADDC    A,R6
+0129 FA                MOV     R2,A
+012A 120000      E     LCALL   ?C?LLDPTR
+012D 900000      R     MOV     DPTR,#min
+0130 120000      E     LCALL   ?C?LSTXDATA
+0133         ?C0004:
+                                           ; SOURCE LINE # 23
+0133 900000      R     MOV     DPTR,#i
+0136 E0                MOVX    A,@DPTR
+0137 FE                MOV     R6,A
+0138 A3                INC     DPTR
+0139 E0                MOVX    A,@DPTR
+013A FF                MOV     R7,A
+013B EF                MOV     A,R7
+013C 7802              MOV     R0,#02H
+013E         ?C0017:
+013E C3                CLR     C
+013F 33                RLC     A
+0140 CE                XCH     A,R6
+0141 33                RLC     A
+0142 CE                XCH     A,R6
+0143 D8F9              DJNZ    R0,?C0017
+0145 FF                MOV     R7,A
+0146 900000      R     MOV     DPTR,#arr
+0149 120000      E     LCALL   ?C?PLDXDATA
+014C E9                MOV     A,R1
+014D 2F                ADD     A,R7
+014E F9                MOV     R1,A
+014F EA                MOV     A,R2
+0150 3E                ADDC    A,R6
+0151 FA                MOV     R2,A
+0152 120000      E     LCALL   ?C?LLDPTR
+0155 900000      R     MOV     DPTR,#max
+0158 120000      E     LCALL   ?C?LLDXDATA0
+015B 120000      E     LCALL   ?C?FPCMP3
+015E 5028              JNC     ?C0005
+                                           ; SOURCE LINE # 24
+0160 900000      R     MOV     DPTR,#i
+0163 E0                MOVX    A,@DPTR
+0164 FE                MOV     R6,A
+0165 A3                INC     DPTR
+0166 E0                MOVX    A,@DPTR
+0167 FF                MOV     R7,A
+0168 EF                MOV     A,R7
+0169 7802              MOV     R0,#02H
+016B         ?C0018:
+016B C3                CLR     C
+016C 33                RLC     A
+016D CE                XCH     A,R6
+016E 33                RLC     A
+016F CE                XCH     A,R6
+0170 D8F9              DJNZ    R0,?C0018
+0172 FF                MOV     R7,A
+0173 900000      R     MOV     DPTR,#arr
+0176 120000      E     LCALL   ?C?PLDXDATA
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 7   
+
+0179 E9                MOV     A,R1
+017A 2F                ADD     A,R7
+017B F9                MOV     R1,A
+017C EA                MOV     A,R2
+017D 3E                ADDC    A,R6
+017E FA                MOV     R2,A
+017F 120000      E     LCALL   ?C?LLDPTR
+0182 900000      R     MOV     DPTR,#max
+0185 120000      E     LCALL   ?C?LSTXDATA
+0188         ?C0005:
+                                           ; SOURCE LINE # 26
+0188 900000      R     MOV     DPTR,#i
+018B E0                MOVX    A,@DPTR
+018C FE                MOV     R6,A
+018D A3                INC     DPTR
+018E E0                MOVX    A,@DPTR
+018F FF                MOV     R7,A
+0190 EF                MOV     A,R7
+0191 7802              MOV     R0,#02H
+0193         ?C0019:
+0193 C3                CLR     C
+0194 33                RLC     A
+0195 CE                XCH     A,R6
+0196 33                RLC     A
+0197 CE                XCH     A,R6
+0198 D8F9              DJNZ    R0,?C0019
+019A FF                MOV     R7,A
+019B 900000      R     MOV     DPTR,#arr
+019E 120000      E     LCALL   ?C?PLDXDATA
+01A1 E9                MOV     A,R1
+01A2 2F                ADD     A,R7
+01A3 F9                MOV     R1,A
+01A4 EA                MOV     A,R2
+01A5 3E                ADDC    A,R6
+01A6 FA                MOV     R2,A
+01A7 120000      E     LCALL   ?C?LLDPTR
+01AA 7BEC              MOV     R3,#0ECH
+01AC 7A51              MOV     R2,#051H
+01AE 79B8              MOV     R1,#0B8H
+01B0 783D              MOV     R0,#03DH
+01B2 120000      E     LCALL   ?C?FPCMP3
+01B5 500A              JNC     ?C0006
+                                           ; SOURCE LINE # 27
+01B7 900000      R     MOV     DPTR,#countSamples009
+01BA E4                CLR     A
+01BB 75F001            MOV     B,#01H
+01BE 120000      E     LCALL   ?C?IILDX
+01C1         ?C0006:
+                                           ; SOURCE LINE # 28
+01C1 900000      R     MOV     DPTR,#i
+01C4 E0                MOVX    A,@DPTR
+01C5 FE                MOV     R6,A
+01C6 A3                INC     DPTR
+01C7 E0                MOVX    A,@DPTR
+01C8 FF                MOV     R7,A
+01C9 EF                MOV     A,R7
+01CA 7802              MOV     R0,#02H
+01CC         ?C0020:
+01CC C3                CLR     C
+01CD 33                RLC     A
+01CE CE                XCH     A,R6
+01CF 33                RLC     A
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 8   
+
+01D0 CE                XCH     A,R6
+01D1 D8F9              DJNZ    R0,?C0020
+01D3 FF                MOV     R7,A
+01D4 900000      R     MOV     DPTR,#arr
+01D7 120000      E     LCALL   ?C?PLDXDATA
+01DA E9                MOV     A,R1
+01DB 2F                ADD     A,R7
+01DC F9                MOV     R1,A
+01DD EA                MOV     A,R2
+01DE 3E                ADDC    A,R6
+01DF FA                MOV     R2,A
+01E0 120000      E     LCALL   ?C?LLDPTR
+01E3 7B0A              MOV     R3,#0AH
+01E5 7AD7              MOV     R2,#0D7H
+01E7 79A3              MOV     R1,#0A3H
+01E9 783D              MOV     R0,#03DH
+01EB 120000      E     LCALL   ?C?FPCMP3
+01EE 500A              JNC     ?C0003
+                                           ; SOURCE LINE # 29
+01F0 900000      R     MOV     DPTR,#countSamples008
+01F3 E4                CLR     A
+01F4 75F001            MOV     B,#01H
+01F7 120000      E     LCALL   ?C?IILDX
+                                           ; SOURCE LINE # 30
+01FA         ?C0003:
+01FA 900000      R     MOV     DPTR,#i
+01FD E4                CLR     A
+01FE 75F001            MOV     B,#01H
+0201 120000      E     LCALL   ?C?IILDX
+0204 020000      R     LJMP    ?C0001
+0207         ?C0002:
+                                           ; SOURCE LINE # 33
+0207 900000      R     MOV     DPTR,#size
+020A E0                MOVX    A,@DPTR
+020B FF                MOV     R7,A
+020C EF                MOV     A,R7
+020D 24FE              ADD     A,#0FEH
+020F FC                MOV     R4,A
+0210 E4                CLR     A
+0211 120000      E     LCALL   ?C?FCASTC
+0214 A804              MOV     R0,AR4
+0216 A905              MOV     R1,AR5
+0218 AA06              MOV     R2,AR6
+021A AB07              MOV     R3,AR7
+021C 900000      R     MOV     DPTR,#total
+021F 120000      E     LCALL   ?C?LLDXDATA
+0222 120000      E     LCALL   ?C?FPDIV
+0225 900000      R     MOV     DPTR,#average
+0228 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 36
+022B 900000      R     MOV     DPTR,#min
+022E 120000      E     LCALL   ?C?LLDXDATA0
+0231 900000      R     MOV     DPTR,#max
+0234 120000      E     LCALL   ?C?LLDXDATA
+0237 120000      E     LCALL   ?C?FPSUB
+023A 900000      R     MOV     DPTR,#range
+023D 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 39
+0240 7F0A              MOV     R7,#0AH
+0242 7ED7              MOV     R6,#0D7H
+0244 7D23              MOV     R5,#023H
+0246 7C3E              MOV     R4,#03EH
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 9   
+
+0248 900000      R     MOV     DPTR,#average
+024B 120000      E     LCALL   ?C?LLDXDATA0
+024E 120000      E     LCALL   ?C?FPCMP3
+0251 600A              JZ      ?C0008
+0253 4008              JC      ?C0008
+                                           ; SOURCE LINE # 40
+0255 900000      R     MOV     DPTR,#result
+0258 7464              MOV     A,#064H
+025A F0                MOVX    @DPTR,A
+025B 8024              SJMP    ?C0009
+025D         ?C0008:
+                                           ; SOURCE LINE # 42
+025D 7F00              MOV     R7,#00H
+025F 7E00              MOV     R6,#00H
+0261 7D7A              MOV     R5,#07AH
+0263 7C44              MOV     R4,#044H
+0265 900000      R     MOV     DPTR,#average
+0268 120000      E     LCALL   ?C?LLDXDATA0
+026B 120000      E     LCALL   ?C?FPMUL
+026E 7BCD              MOV     R3,#0CDH
+0270 7ACC              MOV     R2,#0CCH
+0272 79CC              MOV     R1,#0CCH
+0274 783F              MOV     R0,#03FH
+0276 120000      E     LCALL   ?C?FPDIV
+0279 120000      E     LCALL   ?C?CASTF
+027C 900000      R     MOV     DPTR,#result
+027F EF                MOV     A,R7
+0280 F0                MOVX    @DPTR,A
+0281         ?C0009:
+                                           ; SOURCE LINE # 48
+0281 7FCD              MOV     R7,#0CDH
+0283 7ECC              MOV     R6,#0CCH
+0285 7DCC              MOV     R5,#0CCH
+0287 7C3D              MOV     R4,#03DH
+0289 900000      R     MOV     DPTR,#range
+028C 120000      E     LCALL   ?C?LLDXDATA0
+028F 120000      E     LCALL   ?C?FPCMP3
+0292 501C              JNC     ?C0010
+                                           ; SOURCE LINE # 49
+0294 900000      R     MOV     DPTR,#result
+0297 E0                MOVX    A,@DPTR
+0298 FC                MOV     R4,A
+0299 EC                MOV     A,R4
+029A 120000      E     LCALL   ?C?FCASTC
+029D 7B33              MOV     R3,#033H
+029F 7A33              MOV     R2,#033H
+02A1 7933              MOV     R1,#033H
+02A3 783F              MOV     R0,#03FH
+02A5 120000      E     LCALL   ?C?FPMUL
+02A8 120000      E     LCALL   ?C?CASTF
+02AB 900000      R     MOV     DPTR,#result
+02AE EF                MOV     A,R7
+02AF F0                MOVX    @DPTR,A
+02B0         ?C0010:
+                                           ; SOURCE LINE # 50
+02B0 900000      R     MOV     DPTR,#size
+02B3 E0                MOVX    A,@DPTR
+02B4 FF                MOV     R7,A
+02B5 EF                MOV     A,R7
+02B6 24FE              ADD     A,#0FEH
+02B8 FC                MOV     R4,A
+02B9 E4                CLR     A
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 10  
+
+02BA 120000      E     LCALL   ?C?FCASTC
+02BD 7B00              MOV     R3,#00H
+02BF 7A00              MOV     R2,#00H
+02C1 7900              MOV     R1,#00H
+02C3 783F              MOV     R0,#03FH
+02C5 120000      E     LCALL   ?C?FPMUL
+02C8 C004              PUSH    AR4
+02CA C005              PUSH    AR5
+02CC C006              PUSH    AR6
+02CE C007              PUSH    AR7
+02D0 900000      R     MOV     DPTR,#countSamples009
+02D3 E0                MOVX    A,@DPTR
+02D4 FE                MOV     R6,A
+02D5 A3                INC     DPTR
+02D6 E0                MOVX    A,@DPTR
+02D7 FF                MOV     R7,A
+02D8 900000      R     MOV     DPTR,#countSamples008
+02DB E0                MOVX    A,@DPTR
+02DC FC                MOV     R4,A
+02DD A3                INC     DPTR
+02DE E0                MOVX    A,@DPTR
+02DF FD                MOV     R5,A
+02E0 ED                MOV     A,R5
+02E1 2F                ADD     A,R7
+02E2 FD                MOV     R5,A
+02E3 EC                MOV     A,R4
+02E4 3E                ADDC    A,R6
+02E5 FC                MOV     R4,A
+02E6 EC                MOV     A,R4
+02E7 120000      E     LCALL   ?C?FCASTI
+02EA A804              MOV     R0,AR4
+02EC A905              MOV     R1,AR5
+02EE AA06              MOV     R2,AR6
+02F0 AB07              MOV     R3,AR7
+02F2 D007              POP     AR7
+02F4 D006              POP     AR6
+02F6 D005              POP     AR5
+02F8 D004              POP     AR4
+02FA 120000      E     LCALL   ?C?FPCMP3
+02FD 501C              JNC     ?C0011
+                                           ; SOURCE LINE # 51
+02FF 900000      R     MOV     DPTR,#result
+0302 E0                MOVX    A,@DPTR
+0303 FC                MOV     R4,A
+0304 EC                MOV     A,R4
+0305 120000      E     LCALL   ?C?FCASTC
+0308 7B33              MOV     R3,#033H
+030A 7A33              MOV     R2,#033H
+030C 7933              MOV     R1,#033H
+030E 783F              MOV     R0,#03FH
+0310 120000      E     LCALL   ?C?FPMUL
+0313 120000      E     LCALL   ?C?CASTF
+0316 900000      R     MOV     DPTR,#result
+0319 EF                MOV     A,R7
+031A F0                MOVX    @DPTR,A
+031B         ?C0011:
+                                           ; SOURCE LINE # 53
+031B 900000      R     MOV     DPTR,#result
+031E E0                MOVX    A,@DPTR
+031F FF                MOV     R7,A
+                                           ; SOURCE LINE # 54
+0320         ?C0012:
+C51 COMPILER V9.51   FUNCTIONS                                                             12/19/2013 21:53:03 PAGE 11  
+
+0320 22                RET     
+             ; FUNCTION _analyzeSound (END)
+
+             ; FUNCTION _analyzeTemp (BEGIN)
+                                           ; SOURCE LINE # 56
+0000 900000      R     MOV     DPTR,#tempFromADC
+0003 EE                MOV     A,R6
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EF                MOV     A,R7
+0007 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 58
+0008 900000      R     MOV     DPTR,#tempFromADC
+000B E0                MOVX    A,@DPTR
+000C FC                MOV     R4,A
+000D A3                INC     DPTR
+000E E0                MOVX    A,@DPTR
+000F FD                MOV     R5,A
+0010 EC                MOV     A,R4
+0011 120000      E     LCALL   ?C?FCASTI
+0014 7BB8              MOV     R3,#0B8H
+0016 7A3E              MOV     R2,#03EH
+0018 793B              MOV     R1,#03BH
+001A 7844              MOV     R0,#044H
+001C 120000      E     LCALL   ?C?FPDIV
+001F 7BD7              MOV     R3,#0D7H
+0021 7AA3              MOV     R2,#0A3H
+0023 79B9              MOV     R1,#0B9H
+0025 7841              MOV     R0,#041H
+0027 120000      E     LCALL   ?C?FPADD
+002A 120000      E     LCALL   ?C?CASTF
+002D 900000      R     MOV     DPTR,#realTemp
+0030 EF                MOV     A,R7
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 59
+0032 900000      R     MOV     DPTR,#realTemp
+0035 E0                MOVX    A,@DPTR
+0036 FF                MOV     R7,A
+                                           ; SOURCE LINE # 60
+0037         ?C0013:
+0037 22                RET     
+             ; FUNCTION _analyzeTemp (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    857    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      34
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

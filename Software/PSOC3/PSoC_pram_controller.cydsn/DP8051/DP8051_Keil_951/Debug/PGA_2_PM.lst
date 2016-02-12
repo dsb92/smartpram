@@ -1,0 +1,244 @@
+C51 COMPILER V9.51   PGA_2_PM                                                              12/13/2013 13:30:18 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE PGA_2_PM
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\PGA_2_PM.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\3.0\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -.\Generated_Source\PSoC3\PGA_2_PM.c NOIV LARGE MODDP2 OMF2 VB(1) PR(.\DP8051\DP8051_Keil_951\Debug\PGA_2_PM.lst) CD DB N
+                    -OIP OT(2,SIZE) INCDIR(.,.\Generated_Source\PSoC3) OJ(.\DP8051\DP8051_Keil_951\Debug\PGA_2_PM.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: PGA_2_PM.c  
+   3          * Version 2.0
+   4          *
+   5          * Description:
+   6          *  This file provides the power manager source code to the API for PGA 
+   7          *  Component.
+   8          *
+   9          * Note:
+  10          *
+  11          ********************************************************************************
+  12          * Copyright 2008-2012, Cypress Semiconductor Corporation.  All rights reserved.
+  13          * You may use this file only in accordance with the license, terms, conditions, 
+  14          * disclaimers, and limitations in the end user license agreement accompanying 
+  15          * the software package with which this file was provided.
+  16          *******************************************************************************/
+  17          
+  18          #include "PGA_2.h"
+  19          
+  20          static PGA_2_BACKUP_STRUCT  PGA_2_backup;
+  21          
+  22          
+  23          /*******************************************************************************
+  24          * Function Name: PGA_2_SaveConfig
+  25          ********************************************************************************
+  26          *
+  27          * Summary:
+  28          *  Save the current user register configuration.
+  29          *
+  30          * Parameters:
+  31          *  void
+  32          *
+  33          * Return:
+  34          *  void
+  35          *
+  36          *******************************************************************************/
+  37          void PGA_2_SaveConfig(void) 
+  38          {
+  39   1          /* Nothing to save as registers are System reset on retention flops */
+  40   1      }
+  41          
+  42          
+  43          /*******************************************************************************  
+  44          * Function Name: PGA_2_RestoreConfig
+  45          ********************************************************************************
+  46          *
+  47          * Summary:
+  48          *  Restore the register configurations.
+  49          *
+  50          * Parameters:
+  51          *  void
+  52          *
+  53          * Return:
+C51 COMPILER V9.51   PGA_2_PM                                                              12/13/2013 13:30:18 PAGE 2   
+
+  54          *  void
+  55          *
+  56          *******************************************************************************/
+  57          void PGA_2_RestoreConfig(void) 
+  58          {
+  59   1          /* Nothing to restore */
+  60   1      }
+  61          
+  62          
+  63          /*******************************************************************************   
+  64          * Function Name: PGA_2_Sleep
+  65          ********************************************************************************
+  66          *
+  67          * Summary:
+  68          *  Disables block's operation and saves its configuration. Should be called 
+  69          *  just prior to entering sleep.
+  70          *
+  71          * Parameters:
+  72          *  None
+  73          *
+  74          * Return:
+  75          *  None
+  76          *
+  77          * Global variables:
+  78          *  PGA_2_backup: The structure field 'enableState' is modified 
+  79          *  depending on the enable state of the block before entering to sleep mode.
+  80          *
+  81          *******************************************************************************/
+  82          void PGA_2_Sleep(void) 
+  83          {
+  84   1          /* Save PGA enable state */
+  85   1          if((PGA_2_PM_ACT_CFG_REG & PGA_2_ACT_PWR_EN) != 0u)
+  86   1          {
+  87   2              /* Component is enabled */
+  88   2              PGA_2_backup.enableState = 1u;
+  89   2              /* Stop the configuration */
+  90   2              PGA_2_Stop();
+  91   2          }
+  92   1          else
+  93   1          {
+  94   2              /* Component is disabled */
+  95   2              PGA_2_backup.enableState = 0u;
+  96   2          }
+  97   1          /* Save the configuration */
+  98   1          PGA_2_SaveConfig();
+  99   1      }
+ 100          
+ 101          
+ 102          /*******************************************************************************
+ 103          * Function Name: PGA_2_Wakeup
+ 104          ********************************************************************************
+ 105          *
+ 106          * Summary:
+ 107          *  Enables block's operation and restores its configuration. Should be called
+ 108          *  just after awaking from sleep.
+ 109          *
+ 110          * Parameters:
+ 111          *  None
+ 112          *
+ 113          * Return:
+ 114          *  void
+ 115          *
+C51 COMPILER V9.51   PGA_2_PM                                                              12/13/2013 13:30:18 PAGE 3   
+
+ 116          * Global variables:
+ 117          *  PGA_2_backup: The structure field 'enableState' is used to 
+ 118          *  restore the enable state of block after wakeup from sleep mode.
+ 119          * 
+ 120          *******************************************************************************/
+ 121          void PGA_2_Wakeup(void) 
+ 122          {
+ 123   1          /* Restore the configurations */
+ 124   1          PGA_2_RestoreConfig();
+ 125   1           /* Enables the component operation */
+ 126   1          if(PGA_2_backup.enableState == 1u)
+ 127   1          {
+ 128   2              PGA_2_Enable();
+ 129   2          } /* Do nothing if component was disable before */
+ 130   1      }
+ 131          
+ 132          
+ 133          /* [] END OF FILE */
+C51 COMPILER V9.51   PGA_2_PM                                                              12/13/2013 13:30:18 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION PGA_2_SaveConfig (BEGIN)
+                                           ; SOURCE LINE # 37
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 40
+0000 22                RET     
+             ; FUNCTION PGA_2_SaveConfig (END)
+
+             ; FUNCTION PGA_2_RestoreConfig (BEGIN)
+                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 58
+                                           ; SOURCE LINE # 60
+0000 22                RET     
+             ; FUNCTION PGA_2_RestoreConfig (END)
+
+             ; FUNCTION PGA_2_Sleep (BEGIN)
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 83
+                                           ; SOURCE LINE # 85
+0000 9043A9            MOV     DPTR,#043A9H
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 EF                MOV     A,R7
+0006 5408              ANL     A,#08H
+0008 FF                MOV     R7,A
+0009 7E00              MOV     R6,#00H
+000B EF                MOV     A,R7
+000C 4E                ORL     A,R6
+000D 600B              JZ      ?C0003
+                                           ; SOURCE LINE # 86
+                                           ; SOURCE LINE # 88
+000F 900000      R     MOV     DPTR,#PGA_2_backup
+0012 7401              MOV     A,#01H
+0014 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 90
+0015 120000      E     LCALL   PGA_2_Stop
+                                           ; SOURCE LINE # 91
+0018 8005              SJMP    ?C0004
+001A         ?C0003:
+                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 95
+001A 900000      R     MOV     DPTR,#PGA_2_backup
+001D E4                CLR     A
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 96
+001F         ?C0004:
+                                           ; SOURCE LINE # 98
+001F 120000      R     LCALL   PGA_2_SaveConfig
+                                           ; SOURCE LINE # 99
+0022 22                RET     
+             ; FUNCTION PGA_2_Sleep (END)
+
+             ; FUNCTION PGA_2_Wakeup (BEGIN)
+                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 124
+0000 120000      R     LCALL   PGA_2_RestoreConfig
+                                           ; SOURCE LINE # 126
+0003 900000      R     MOV     DPTR,#PGA_2_backup
+0006 E0                MOVX    A,@DPTR
+C51 COMPILER V9.51   PGA_2_PM                                                              12/13/2013 13:30:18 PAGE 5   
+
+0007 FF                MOV     R7,A
+0008 EF                MOV     A,R7
+0009 B40103            CJNE    A,#01H,?C0007
+                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 128
+000C 120000      E     LCALL   PGA_2_Enable
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 130
+000F         ?C0007:
+000F 22                RET     
+             ; FUNCTION PGA_2_Wakeup (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     53    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
